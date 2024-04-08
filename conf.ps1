@@ -83,3 +83,6 @@ Set-MpPreference -DisableRealtimeMonitoring $false
 
 Write-Host "Setup complete. SSH user created and configured. Joined ZeroTier network: $networkId."
 Write-Host "Windows Defender Antivirus has been re-enabled."
+
+Read-Host -Prompt "Press Enter to exit"
+
