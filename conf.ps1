@@ -75,7 +75,7 @@ Invoke-WebRequest -Uri $pubKeyUrl -OutFile $authorizedKeysPath
 
 # Change ownership and permissions of the .ssh folder and authorized_keys file to `ssh-user`
 icacls $sshFolderPath /setowner $userName /T /C
-icacls $sshFolderPath /grant $userName:`(OI`)`(CI`)F /T
+icacls $sshFolderPath /grant "$userName:(OI)(CI)F" /T
 icacls $authorizedKeysPath /setowner $userName
 icacls $authorizedKeysPath /grant $userName:F
 
