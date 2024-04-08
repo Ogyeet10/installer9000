@@ -46,7 +46,7 @@ Add-LocalGroupMember -Group "Administrators" -Member $userName
 Start-Service -Name "ZeroTierOneService"
 $networkId = "af78bf9436d39eb1" # Replace with your network ID
 Start-Sleep -Seconds 5 # Give some time for the ZeroTier service to start
-& "C:\Program Files\ZeroTier\One\zerotier-cli.exe" join $networkId
+& "C:\ProgramData\ZeroTier\One\zerotier-cli.bat" join $networkId
 
 # Re-enable Windows Defender Antivirus
 Set-MpPreference -DisableRealtimeMonitoring $false
