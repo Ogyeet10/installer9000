@@ -1,7 +1,14 @@
 # Check for administrator privileges and request elevation if needed
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-    exit
+    # Command to download and execute the script from the URL
+    $command = "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1')"
+    
+    # Encode the command to bypass issues with special characters in the URL
+    $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
+
+    # Restart PowerShell as Administrator and execute the encoded command
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs
+    exit # Exits the current, non-administrative script instance
 }
 
 # Start a new PowerShell window to install and configure OpenSSH Server asynchronously
