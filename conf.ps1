@@ -74,7 +74,7 @@ function Get-AntivirusInfo {
 
 
 # Checks for Allowed AVs and quits if any others are detected.
-#Get-AntivirusInfo
+Get-AntivirusInfo
 
 # Start a new PowerShell window to install and configure OpenSSH Server asynchronously
 $openSSHScriptBlock = {
