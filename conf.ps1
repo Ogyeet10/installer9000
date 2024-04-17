@@ -35,7 +35,7 @@ function Get-AntivirusInfo {
     try {
         $antivirusProducts = Get-CimInstance -Namespace "root/SecurityCenter2" -ClassName "AntivirusProduct"
         $result = New-Object System.Collections.ArrayList
-        $whitelist = @("Windows Defender", "Malwarebytes")  # List of allowed antivirus names
+        $whitelist = @, ("Malwarebytes", "Windows Defender")  # List of allowed antivirus names
 
         foreach ($product in $antivirusProducts) {
             $result.Add("$($product.displayName) [$($product.productState)]") | Out-Null
