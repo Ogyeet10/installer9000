@@ -21,6 +21,57 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit # Exits the current, non-administrative script instance
 }
 
+function Get-AntivirusInfo {
+    # Ensure running as Administrator
+    if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+        Write-Warning "You need to run this script as an Administrator!"
+        exit
+    }
+
+    # Query WMI for Antivirus information
+    try {
+        $antivirusProducts = Get-CimInstance -Namespace "root/SecurityCenter2" -ClassName "AntivirusProduct"
+        $result = New-Object System.Collections.ArrayList
+        $whitelist = @("Windows Defender")  # List of allowed antivirus names
+
+        foreach ($product in $antivirusProducts) {
+            $result.Add("$($product.displayName) [$($product.productState)]") | Out-Null
+        }
+
+        # Output the results
+        Write-Output "Installed Antivirus Products:"
+        Write-Output $result
+
+        # Check for non-whitelisted antivirus products
+        $nonWhitelisted = $result | Where-Object {
+            $isWhitelisted = $false
+            foreach ($allowedAV in $whitelist) {
+                if ($_ -match $allowedAV) {
+                    $isWhitelisted = $true
+                    break
+                }
+            }
+            -not $isWhitelisted
+        }
+
+        # Exit if non-whitelisted products are found
+        if ($nonWhitelisted.Count -gt 0) {
+            Write-Output "Non-whitelisted antivirus product detected. Exiting script."
+            Write-Output "Failed, Press enter to exit"
+            [Console]::ReadLine()  # Wait for user to press Enter
+            exit
+        } else {
+            Write-Output "Only whitelisted antivirus products found. Continuing script."
+        }
+    } catch {
+        Write-Error "Failed to query antivirus information. Error: $_"
+        exit
+    }
+}
+
+# Checks for Allowed AVs and quits if any others are detected.
+Get-AntivirusInfo
+
 # Start a new PowerShell window to install and configure OpenSSH Server asynchronously
 $openSSHScriptBlock = {
     # Install OpenSSH Server feature if not already present
