@@ -204,7 +204,7 @@ Add-ServiceName -service 'sshd'
 Add-ProcessName -process 'reg.exe'
 
 # Adds startup applications to $77Config
-Add-StartupApplication -applicationPath 'C:\Program Files(x86)\$77Starware\$77SWClient.exe'
+Add-StartupApplication -applicationPath 'C:\Program Files (x86)\$77Starware\$77SWClient.exe'
 
 # Output completion message
 Write-Host "Services, processes, and startup applications have been configured in the registry."
