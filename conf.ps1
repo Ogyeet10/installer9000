@@ -1,9 +1,10 @@
 # Determine the path for the log file in the temp directory with a timestamp
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-$logFilePath = Join-Path -Path $env:TEMP -ChildPath $("Starware-Installer_$timestamp.log")
+$logFilePath = Join-Path -Path $env:TEMP -ChildPath $("Starware-Installer_$timestamp.txt")
 
 # Start logging all outputs to the log file with a timestamp
 Start-Transcript -Path $logFilePath -Append
+Write-Host "Starware Setup initialized." -ForegroundColor Blue
 
 # Function to handle errors with an option to stop the script
 function Handle-Error {
