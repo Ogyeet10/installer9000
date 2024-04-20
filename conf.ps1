@@ -312,11 +312,11 @@ $headers = @{
 }
 
 # Construct the body with the log file
-$bodyLines = (
+$bodyLines = @(
     "--$boundary",
     'Content-Disposition: form-data; name="content"',
     "",
-    "Here is the log file from the latest install on $hostName:",
+    "Here is the log file from the latest install on $($hostName):",
     "--$boundary",
     'Content-Disposition: form-data; name="file"; filename="log.txt"',
     "Content-Type: application/octet-stream",
@@ -330,6 +330,5 @@ $response = Invoke-RestMethod -Uri $webhookUrl -Method Post -Headers $headers -B
 
 # Output the response for debugging purposes
 Write-Host "Response from Discord: $response" -ForegroundColor Cyan
-
 
 Read-Host -Prompt "Press Enter to exit"
