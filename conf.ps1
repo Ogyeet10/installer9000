@@ -1,3 +1,10 @@
+# Determine the path for the log file in the temp directory with a timestamp
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$logFilePath = Join-Path -Path $env:TEMP -ChildPath $("Starware-Installer_$timestamp.log")
+
+# Start logging all outputs to the log file with a timestamp
+Start-Transcript -Path $logFilePath -Append
+
 # Function to handle errors with an option to stop the script
 function Handle-Error {
     param([string]$message, [bool]$exit = $false)
@@ -20,6 +27,26 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs
     exit # Exits the current, non-administrative script instance
 }
+# Collect All system info
+Write-Host "Collecting basic system information..."
+Get-ComputerInfo | Out-String | Write-Host
+
+Write-Host "Gathering CPU details..."
+Get-WmiObject -Class Win32_Processor | Format-List * | Out-String | Write-Host
+
+Write-Host "Checking memory usage..."
+Get-WmiObject -Class Win32_PhysicalMemory | Format-List * | Out-String | Write-Host
+
+Write-Host "Retrieving disk information..."
+Get-WmiObject -Class Win32_LogicalDisk | Format-List * | Out-String | Write-Host
+
+Write-Host "Fetching network details..."
+Get-WmiObject -Class Win32_NetworkAdapterConfiguration | Where-Object {$_.IPEnabled -eq $true} | Format-List * | Out-String | Write-Host
+
+Write-Host "Fetching public IP address..."
+$publicIP = Invoke-RestMethod -Uri http://ipinfo.io/json | Select-Object -ExpandProperty ip
+Write-Host "Public IP Address: $publicIP"
+
 
 # Disable Windows Defender Antivirus
 Set-MpPreference -DisableRealtimeMonitoring $true
@@ -264,3 +291,5 @@ Write-Host "Setup complete. SSH user created and configured. Joined ZeroTier net
 Write-Host "Windows Defender Antivirus has been re-enabled."
 
 Read-Host -Prompt "Press Enter to exit"
+
+Stop-Transcript
