@@ -8,17 +8,35 @@ function Check-Admin {
     return $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+# Function to determine the window style to use based on the current PowerShell instance
+function Get-WindowStyle {
+    try {
+        $process = Get-Process -id $PID
+        $mainWindowHandle = $process.MainWindowHandle
+
+        # Check if the window handle is zero, which is typically the case for hidden windows
+        if ($mainWindowHandle -eq 0) {
+            return "Hidden"
+        } else {
+            return "Normal"
+        }
+    } catch {
+        return "Hidden"  # Default to Hidden if any error occurs
+    }
+}
+
 # Path for the flag file (temp directory which is generally writable without admin rights)
 $flagPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "admin_script_flag.txt")
 
 # Load necessary .NET assembly for using Windows Forms MessageBox
 Add-Type -AssemblyName System.Windows.Forms
 
-# Function to attempt to run the script as admin
+# Function to attempt to run the script as admin with conditional window style
 function Invoke-Admin {
     $script = $MyInvocation.MyCommand.Definition
     $encodedScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
-    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedScript" -Verb RunAs
+    $windowStyle = Get-WindowStyle
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle $windowStyle -EncodedCommand $encodedScript" -Verb RunAs
 }
 
 # Loop until an elevated instance has started or this script is killed
@@ -37,13 +55,15 @@ while ($true) {
         $caption = "Admin Required"
         [System.Windows.Forms.MessageBox]::Show($message, $caption, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
         
-        # Attempt to restart this script with admin privileges
+        # Attempt to restart this script with admin privileges and conditional window style
         Invoke-Admin
 
         # Wait a bit to avoid rapid repetitive prompts and give the user time to respond to UAC
         Start-Sleep -Seconds 20
     }
 }
+
+# This part will only execute if already running with admin rights
 
 # Determine the hostname of the system
 $hostName = $env:COMPUTERNAME
