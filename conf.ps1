@@ -1,6 +1,11 @@
-# Determine the path for the log file in the temp directory with a timestamp
+# Get the current timestamp
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+
+# Construct the log file path
 $logFilePath = Join-Path -Path $env:TEMP -ChildPath $("Starware-Installer_$timestamp.txt")
+
+# Store the original log file path in a variable
+$originalLogFilePath = $logFilePath
 
 # Start logging all outputs to the log file with a timestamp
 Start-Transcript -Path $logFilePath -Append
