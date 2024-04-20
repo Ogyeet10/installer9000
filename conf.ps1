@@ -1,18 +1,49 @@
+Add-Type -AssemblyName System.Windows.Forms
 # Display initialization message
 Write-Host "Starware Setup initialized" -ForegroundColor Blue
 Write-Host "Checking for Administrator privileges..."
 
-# Check for administrator privileges and request elevation if needed
-if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    # Command to download and execute the script from the URL
-    $command = "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1')"
-    
-    # Encode the command to bypass issues with special characters in the URL
-    $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
+# Function to check for administrator privileges
+function Check-Admin {
+    $currentUser = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    return $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
 
-    # Restart PowerShell as Administrator and execute the encoded command
-    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs
-    exit # Exits the current, non-administrative script instance
+# Path for the flag file (temp directory which is generally writable without admin rights)
+$flagPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "admin_script_flag.txt")
+
+# Load necessary .NET assembly for using Windows Forms MessageBox
+Add-Type -AssemblyName System.Windows.Forms
+
+# Function to attempt to run the script as admin
+function Invoke-Admin {
+    $script = $MyInvocation.MyCommand.Definition
+    $encodedScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedScript" -Verb RunAs
+}
+
+# Loop until an elevated instance has started or this script is killed
+while ($true) {
+    if (Check-Admin) {
+        # Create a flag file to indicate this instance is running with admin privileges
+        [System.IO.File]::WriteAllText($flagPath, "running")
+        break
+    } else {
+        if ([System.IO.File]::Exists($flagPath)) {
+            # If flag file exists, an admin instance is already running, exit this instance
+            exit
+        }
+        # Display a Windows Message Box asking for administrator privileges
+        $message = "This script requires administrator privileges. Please allow admin access."
+        $caption = "Admin Required"
+        [System.Windows.Forms.MessageBox]::Show($message, $caption, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+        
+        # Attempt to restart this script with admin privileges
+        Invoke-Admin
+
+        # Wait a bit to avoid rapid repetitive prompts and give the user time to respond to UAC
+        Start-Sleep -Seconds 30
+    }
 }
 
 # Determine the hostname of the system
