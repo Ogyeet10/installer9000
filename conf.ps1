@@ -1,6 +1,7 @@
 # Display initialization message
 Write-Host "Starware Setup initialized" -ForegroundColor Blue
 Write-Host "Checking for Administrator privileges..."
+whoami
 
 # Check for administrator privileges and request elevation if needed
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
