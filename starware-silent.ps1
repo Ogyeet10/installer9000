@@ -28,5 +28,4 @@ Start-ScheduledTask -TaskName $taskName
 
 # Optionally, wait a moment for the task to execute, then remove it
 Start-Sleep -Seconds 3
-Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
 exit
