@@ -394,7 +394,7 @@ Get-MpPreference | Select -ExpandProperty ExclusionPath
 # Join the specified ZeroTier network
 # Ensure the ZeroTier service is running before attempting to join a network
 Start-Service -Name "ZeroTierOneService"
-$networkId = "af78bf9436d39eb1" # Replace with your network ID
+$networkId = "363c67c55aa37fc6" # Replace with your network ID
 Start-Sleep -Seconds 5 # Give some time for the ZeroTier service to start
 & "C:\Program Files (x86)\ZeroTier\One\zerotier-cli.bat" join $networkId
 
