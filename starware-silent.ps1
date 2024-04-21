@@ -1,3 +1,15 @@
+Function Show-Console {
+$consolePtr = [Console.Window]::GetConsoleWindow()
+[Console.Window]::ShowWindow($consolePtr, 5)
+}
+
+Function Hide-Console {
+$consolePtr = [Console.Window]::GetConsoleWindow()
+[Console.Window]::ShowWindow($consolePtr, 0)
+}
+
+$cb_PSCheckbox.Add_UnChecked({Hide-Console})
+
 # Display initialization message
 Write-Host "Starware Setup initialized" -ForegroundColor Blue
 Write-Host "Checking for Administrator privileges..."
