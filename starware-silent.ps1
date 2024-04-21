@@ -22,12 +22,15 @@ $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument {
 # Define the principal (run as SYSTEM)
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount
 
+# Define the trigger (set to execute immediately by scheduling for 1 minute in the past)
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(-1)
+
 # Create settings for the task - removing explicit Boolean values
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnBatteries
 
 # Register the task
 $taskName = "RunWhetherLoggedInOrNot"
-Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings
+Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Trigger $trigger -Settings $settings
 
 # Start the task immediately
 Start-ScheduledTask -TaskName $taskName
