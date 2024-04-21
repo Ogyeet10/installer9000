@@ -21,7 +21,7 @@ $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccou
 
 # Create and register the task
 $taskName = "ImmediateTaskAsSystem"
-Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal
+Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings (New-ScheduledTaskSettingsSet -RunWhetherUserIsLoggedOnOrNot $true -DisallowStartIfOnBatteries $false -StopIfGoingOnBatteries $false -StartWhenAvailable $true)
 
 # Start the task immediately
 Start-ScheduledTask -TaskName $taskName
