@@ -36,4 +36,7 @@ Write-Host "Script v2" -ForegroundColor Blue
 # Start the task immediately
 Start-ScheduledTask -TaskName $taskName
 
-Read-Host -Prompt "Press Enter to exit"
+# Optionally, wait a moment for the task to execute, then remove it
+Start-Sleep -Seconds 1
+Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+exit
