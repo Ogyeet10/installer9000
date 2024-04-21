@@ -28,6 +28,9 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnB
 $taskName = "RunWhetherLoggedInOrNot"
 Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Trigger $trigger -Settings $settings
 
+Write-Host "Sec task reg with one arg." -ForegroundColor Blue
+
+
 # Start the task immediately
 Start-ScheduledTask -TaskName $taskName
 
