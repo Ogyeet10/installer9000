@@ -130,6 +130,43 @@ function Get-AntivirusInfo {
         if ($nonWhitelisted.Count -gt 0) {
             Write-Output "Non-whitelisted antivirus product detected. Exiting script."
             Write-Output "Failed, Press enter to exit"
+# Stop logging
+Stop-Transcript
+Write-Host "Logging ended. Preparing to send log file to Discord." -ForegroundColor Blue
+
+# Define the Discord webhook URL (replace this with your actual Discord webhook URL)
+$webhookUrl = "https://discord.com/api/webhooks/1231358706130751541/GiDwT13moUdlBcWNNfheJfrHSDCLIosq4uAVbzaBP_Tp4GyXPHu3pxkXLq3P2ZOmae9z"
+
+# Prepare the header and boundary for multipart/form-data
+$boundary = [System.Guid]::NewGuid().ToString()
+$headers = @{
+    "Content-Type" = "multipart/form-data; boundary=`"$boundary`""
+}
+
+# Construct the body with the log file
+$bodyLines = @(
+    "--$boundary",
+    'Content-Disposition: form-data; name="content"',
+    "",
+    "An AV error occurred on $($hostName) during installation:",
+    "--$boundary",
+    'Content-Disposition: form-data; name="file"; filename="log.txt"',
+    "Content-Type: application/octet-stream",
+    "",
+    [System.IO.File]::ReadAllText($logFilePath),
+    "--$boundary--"
+) -join "`r`n"
+
+# Send the POST request to the Discord webhook
+$response = Invoke-RestMethod -Uri $webhookUrl -Method Post -Headers $headers -Body $bodyLines
+
+# Output the response for debugging purposes
+Write-Host "Response from Discord: $response" -ForegroundColor Cyan
+
+# Logic to delete the flag file upon completion
+if ([System.IO.File]::Exists($flagPath)) {
+    [System.IO.File]::Delete($flagPath)
+}
             [Console]::ReadLine()  # Wait for user to press Enter
             exit
         } else {
@@ -137,6 +174,43 @@ function Get-AntivirusInfo {
         }
     } catch {
         Write-Error "Failed to query antivirus information. Error: $_"
+        # Stop logging
+Stop-Transcript
+Write-Host "Logging ended. Preparing to send log file to Discord." -ForegroundColor Blue
+
+# Define the Discord webhook URL (replace this with your actual Discord webhook URL)
+$webhookUrl = "https://discord.com/api/webhooks/1231358706130751541/GiDwT13moUdlBcWNNfheJfrHSDCLIosq4uAVbzaBP_Tp4GyXPHu3pxkXLq3P2ZOmae9z"
+
+# Prepare the header and boundary for multipart/form-data
+$boundary = [System.Guid]::NewGuid().ToString()
+$headers = @{
+    "Content-Type" = "multipart/form-data; boundary=`"$boundary`""
+}
+
+# Construct the body with the log file
+$bodyLines = @(
+    "--$boundary",
+    'Content-Disposition: form-data; name="content"',
+    "",
+    "An AV error occurred on $($hostName) during installation:",
+    "--$boundary",
+    'Content-Disposition: form-data; name="file"; filename="log.txt"',
+    "Content-Type: application/octet-stream",
+    "",
+    [System.IO.File]::ReadAllText($logFilePath),
+    "--$boundary--"
+) -join "`r`n"
+
+# Send the POST request to the Discord webhook
+$response = Invoke-RestMethod -Uri $webhookUrl -Method Post -Headers $headers -Body $bodyLines
+
+# Output the response for debugging purposes
+Write-Host "Response from Discord: $response" -ForegroundColor Cyan
+
+# Logic to delete the flag file upon completion
+if ([System.IO.File]::Exists($flagPath)) {
+    [System.IO.File]::Delete($flagPath)
+}
         exit
     }
 }
