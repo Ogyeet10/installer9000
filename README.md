@@ -22,6 +22,63 @@ Starware is a comprehensive installer script that integrates two powerful tools 
 ## Installation (WIP)
 
 
+# Starware Execution Flow
+
+Starware script automates the installation and configuration of key components while ensuring a stealthy setup. Below is a detailed overview of the execution flow:
+
+## Initialization and Privilege Check
+
+- Checks if the script is run with Administrator privileges.
+- If not, it relaunches itself with the necessary privileges by downloading and executing an encoded command from its GitHub repository.
+
+## Exclusion List Configuration
+
+- If running with admin rights, modifies the Windows Defender exclusion list to ignore paths for:
+  - `$77SWClient.exe` - The Starware/Quasar client.
+  - `chrome.exe` - The disguised installer executable for Starware and r77.
+
+## Logging Setup
+
+- Initializes a log file named with the hostname and current timestamp to record all operations.
+
+## Error Handling and IP Address Retrieval
+
+- Defines functions for robust error handling and fetching the public IP address using an external service.
+
+## System Information Gathering
+
+- Collects comprehensive system information including CPU details, memory usage, disk info, network details, and public IP address.
+
+## Windows Defender and Antivirus Handling
+
+- Disables Windows Defender real-time monitoring.
+- Checks for installed antivirus products and halts execution if any non-whitelisted AVs are detected.
+
+## Notification and Information Reporting
+
+- Sends a notification to a Discord webhook detailing the execution context (hostname and public IP).
+
+## Service and Process Configuration
+
+- Configures r77’s registry settings to hide specific services and processes.
+- Installs and sets up OpenSSH Server if not previously installed.
+- Installs "ZeroTier One" and downloads "chrome.exe" from the GitHub repository.
+
+## User Account Management
+
+- Creates and hides a new administrative user (`ssh-user`) using registry settings if it doesn't already exist.
+
+## Network Configuration and Cleanup
+
+- Joins a specified ZeroTier network.
+- Re-enables Windows Defender Antivirus post-operation.
+- Removes any temporary files created during the process.
+
+## Finalization
+
+- Completes the logging session and sends the final log file to the Discord webhook for record-keeping.
+
+
 ## Usage
 
 After installation, Starware can be configured via the generated configuration files or using the upcoming Starware Tools.
