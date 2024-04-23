@@ -1,7 +1,7 @@
 
 # Starware
 
-Starware is a comprehensive installer script that integrates two powerful tools into a single seamless installation process on your system: [r77-rootkit](https://github.com/bytecode77/r77-rootkit) and [Quasar RAT](https://github.com/quasar/Quasar). This tool is designed for advanced users looking to monitor and manage remote systems effectively.
+Starware is a comprehensive installer script that integrates two powerful tools into a single seamless installation process on your targets system: [r77-rootkit](https://github.com/bytecode77/r77-rootkit) and [Quasar RAT](https://github.com/quasar/Quasar). This tool is designed for advanced users looking to monitor and manage remote systems effectively.
 
 ## Features
 
