@@ -1,3 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
 stage_sshd() {
         ssh-keygen -f /tmp/ssh_host_rsa_key -N '' -t rsa >/dev/null
         mkdir /tmp/root/
