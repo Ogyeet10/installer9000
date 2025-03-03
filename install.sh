@@ -63,29 +63,16 @@ print_status "Enabling password authentication for SSH..."
 sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# Ensure SSH starts on boot - handle different service names across Debian versions
+# Ensure SSH starts on boot - using only the newer service name
 print_status "Ensuring SSH starts on boot..."
-# Try ssh service name first (Debian 11+)
-if systemctl list-unit-files | grep -q ssh.service; then
-    print_status "Enabling ssh service..."
-    systemctl enable ssh
-    systemctl restart ssh
-# If that fails, try sshd service name (older Debian)
-elif systemctl list-unit-files | grep -q sshd.service; then
-    print_status "Enabling sshd service..."
-    systemctl enable sshd
-    systemctl restart sshd
-# Last resort - try both
+systemctl enable ssh
+systemctl restart ssh
+
+# Verify SSH is running
+if ! pgrep sshd > /dev/null; then
+    print_error "WARNING: SSH might not be running. Check service status manually."
 else
-    print_status "Trying both service names..."
-    systemctl enable ssh || systemctl enable sshd || true
-    systemctl restart ssh || systemctl restart sshd || true
-    # Verify SSH is running
-    if ! pgrep sshd > /dev/null; then
-        print_error "WARNING: Could not confirm SSH is running. You may need to start it manually."
-    else
-        print_status "SSH service is running!"
-    fi
+    print_status "SSH service is running!"
 fi
 
 # Add new user with password
