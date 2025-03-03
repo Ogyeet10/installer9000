@@ -51,7 +51,7 @@ systemctl enable --now tailscaled
 # Configure Tailscale with auth key
 # NOTE: Replace YOUR_TAILSCALE_AUTH_KEY with your actual key, or uncomment and use the one below
 print_status "Starting Tailscale..."
-tailscale up --authkey tskey-auth-kqRcv6kdqX11CNTRL-vZNFn3wbm9QfhgGfZvkR9QFKQg7QT1T1 --hostname "$(hostname)-debian"
+tailscale up --authkey tskey-auth-kfBt5Vreb721CNTRL-ar8bUeVdUSSf2UGYrcGkSSbFwK4dTzHCH"
 
 # Install and configure OpenSSH
 print_status "Installing and configuring OpenSSH..."
