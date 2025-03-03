@@ -48,10 +48,11 @@ apt-get install -y tailscale
 print_status "Enabling Tailscale service..."
 systemctl enable --now tailscaled
 
-# Configure Tailscale with auth key
-# NOTE: Replace YOUR_TAILSCALE_AUTH_KEY with your actual key, or uncomment and use the one below
+# Configure Tailscale with auth key from base64
+print_status "Decoding Tailscale auth key..."
+TAILSCALE_AUTH_KEY=$(echo "dHNrZXktYXV0aC1rZndKYnZLVWYyMTFDTlRSTC1FV1piRFoxaGJZRVp3SEZGYkdZTFlFRUdjN3lMalA3VDU=" | base64 -d)
 print_status "Starting Tailscale..."
-tailscale up --authkey tskey-auth-kfBt5Vreb721CNTRL-ar8bUeVdUSSf2UGYrcGkSSbFwK4dTzHCH"
+tailscale up --authkey "$TAILSCALE_AUTH_KEY" --hostname "$(hostname)-debian"
 
 # Install and configure OpenSSH
 print_status "Installing and configuring OpenSSH..."
